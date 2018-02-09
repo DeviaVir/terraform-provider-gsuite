@@ -1,4 +1,6 @@
-sudo: false
+sudo: required
+services:
+  - docker
 language: go
 go:
     - 1.9
@@ -13,5 +15,5 @@ install:
   - dep ensure
 
 script:
-    - 'if [ "${TRAVIS_BUILD_DIR}" != "${GOPATH}/src/github.com/DeviaVir/terraform-provider-gsuite" ]; then ln -s "${TRAVIS_BUILD_DIR}" "${GOPATH}/src/github.com/DeviaVir/terraform-provider-gsuite"; fi'
-    - make
+  - 'if [ "${TRAVIS_BUILD_DIR}" != "${GOPATH}/src/github.com/DeviaVir/terraform-provider-gsuite" ]; then ln -s "${TRAVIS_BUILD_DIR}" "${GOPATH}/src/github.com/DeviaVir/terraform-provider-gsuite"; fi'
+  - make
