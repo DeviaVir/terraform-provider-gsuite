@@ -15,7 +15,7 @@ local directory.
 You can now use that credential to authenticate:
 
 ```
-gcloud auth application-default login \
+$ gcloud auth application-default login \
   --client-id-file=client_id.json \
   --scopes \
   https://www.googleapis.com/auth/admin.directory.customer,\
@@ -52,6 +52,8 @@ GSuite provider.
 ## Development
 
 1. `cd` into `$HOME/.terraform.d/plugins/terraform-provider-gsuite`
+
+1. Run `dep ensure` to fetch the go vendor files
 
 1. Make your changes
 
