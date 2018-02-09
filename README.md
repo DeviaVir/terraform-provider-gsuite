@@ -61,6 +61,11 @@ GSuite provider.
 
 1. Next time you run `terraform plan` it'll use your updated version
 
+Some useful resources:
+
+* http://google.golang.org/api/admin/directory/v1
+* https://developers.google.com/admin-sdk/directory/v1/reference/
+
 ## Notes
 
 - Asking too many permissions right now, but rather start out with too much and tone down later on
