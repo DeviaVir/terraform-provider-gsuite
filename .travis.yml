@@ -7,8 +7,8 @@ go:
 
 before_install:
   # Setup dependency management tool
-  - curl -L -s https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -o $GOPATH/bin/dep
-  - chmod +x $GOPATH/bin/dep
+  - curl https://nixos.org/nix/install | sh && . ~/.nix-profile/etc/profile.d/nix.sh
+  - nix-env -i dep
 
 install:
   - go get github.com/hashicorp/terraform
