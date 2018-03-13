@@ -18,11 +18,12 @@ You can now use that credential to authenticate:
 $ gcloud auth application-default login \
   --client-id-file=client_id.json \
   --scopes \
-  https://www.googleapis.com/auth/admin.directory.customer,\
-  https://www.googleapis.com/auth/admin.directory.group,\
-  https://www.googleapis.com/auth/admin.directory.orgunit,\
-  https://www.googleapis.com/auth/admin.directory.user,\
-  https://www.googleapis.com/auth/admin.directory.userschema,
+https://www.googleapis.com/auth/admin.directory.customer,\
+https://www.googleapis.com/auth/admin.directory.group,\
+https://www.googleapis.com/auth/admin.directory.orgunit,\
+https://www.googleapis.com/auth/admin.directory.user,\
+https://www.googleapis.com/auth/admin.directory.userschema,\
+https://www.googleapis.com/auth/userinfo.email
 ```
 
 Now that you have a credential that is allowed to the Admin SDK, you can use the
