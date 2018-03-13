@@ -3,6 +3,8 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	directory "google.golang.org/api/admin/directory/v1"
@@ -389,6 +391,10 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 
 	createdUser, err := config.directory.Users.Insert(user).Do()
 	if err != nil {
+		if strings.Contains(err.Error(), "quotaExceeded") {
+			time.Sleep(2 * time.Second)
+			return resourceUserCreate(d, meta)
+		}
 		return fmt.Errorf("Error creating user: %s", err)
 	}
 
@@ -574,6 +580,10 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	updatedUser, err := config.directory.Users.Update(d.Id(), user).Do()
 	if err != nil {
+		if strings.Contains(err.Error(), "quotaExceeded") {
+			time.Sleep(2 * time.Second)
+			return resourceUserUpdate(d, meta)
+		}
 		return fmt.Errorf("Error updating user: %s", err)
 	}
 
@@ -586,6 +596,10 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 
 	user, err := config.directory.Users.Get(d.Id()).Do()
 	if err != nil {
+		if strings.Contains(err.Error(), "quotaExceeded") {
+			time.Sleep(2 * time.Second)
+			return resourceUserRead(d, meta)
+		}
 		return err
 	}
 
@@ -623,6 +637,10 @@ func resourceUserDelete(d *schema.ResourceData, meta interface{}) error {
 
 	err := config.directory.Users.Delete(d.Id()).Do()
 	if err != nil {
+		if strings.Contains(err.Error(), "quotaExceeded") {
+			time.Sleep(2 * time.Second)
+			return resourceUserDelete(d, meta)
+		}
 		return fmt.Errorf("Error deleting user: %s", err)
 	}
 
