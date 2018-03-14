@@ -3,11 +3,13 @@ package gsuite
 import (
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/resource"
+
 	directory "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/googleapi"
 )
 
 var googleLookup = map[string]string{
@@ -389,13 +391,15 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	user.Name = userName
 
-	createdUser, err := config.directory.Users.Insert(user).Do()
+	var createdUser *directory.User
+	var err error
+	err = retry(func() error {
+		createdUser, err = config.directory.Users.Insert(user).Do()
+		return err
+	})
+
 	if err != nil {
-		if strings.Contains(err.Error(), "quotaExceeded") {
-			time.Sleep(2 * time.Second)
-			return resourceUserCreate(d, meta)
-		}
-		return fmt.Errorf("Error creating user: %s", err)
+		return fmt.Errorf("Error updating user: %s", err)
 	}
 
   d.SetId(createdUser.Id)
@@ -578,12 +582,14 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		user.NullFields = nullFields
 	}
 
-	updatedUser, err := config.directory.Users.Update(d.Id(), user).Do()
+	var updatedUser *directory.User
+	var err error
+	err = retry(func() error {
+		updatedUser, err = config.directory.Users.Update(d.Id(), user).Do()
+		return err
+	})
+
 	if err != nil {
-		if strings.Contains(err.Error(), "quotaExceeded") {
-			time.Sleep(2 * time.Second)
-			return resourceUserUpdate(d, meta)
-		}
 		return fmt.Errorf("Error updating user: %s", err)
 	}
 
@@ -594,13 +600,15 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	user, err := config.directory.Users.Get(d.Id()).Do()
-	if err != nil {
-		if strings.Contains(err.Error(), "quotaExceeded") {
-			time.Sleep(2 * time.Second)
-			return resourceUserRead(d, meta)
-		}
+	var user *directory.User
+	var err error
+	err = retry(func() error {
+		user, err = config.directory.Users.Get(d.Id()).Do()
 		return err
+	})
+
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Get("name").(string)))
 	}
 
 	d.SetId(user.Id)
@@ -635,12 +643,17 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 func resourceUserDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	err := config.directory.Users.Delete(d.Id()).Do()
-	if err != nil {
-		if strings.Contains(err.Error(), "quotaExceeded") {
-			time.Sleep(2 * time.Second)
-			return resourceUserDelete(d, meta)
+	err := resource.Retry(1*time.Minute, func() *resource.RetryError {
+		err := config.directory.Users.Delete(d.Id()).Do()
+		if err == nil {
+			return nil
 		}
+		if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 429) {
+			return resource.RetryableError(gerr)
+		}
+		return resource.NonRetryableError(err)
+	})
+	if err != nil {
 		return fmt.Errorf("Error deleting user: %s", err)
 	}
 

@@ -3,11 +3,13 @@ package gsuite
 import (
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/resource"
+
 	directory "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/googleapi"
 )
 
 func resourceGroup() *schema.Resource {
@@ -75,12 +77,14 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 		group.Description = v.(string)
 	}
 
-	createdGroup, err := config.directory.Groups.Insert(group).Do()
+	var createdGroup *directory.Group
+	var err error
+	err = retry(func() error {
+		createdGroup, err = config.directory.Groups.Insert(group).Do()
+		return err
+	})
+
 	if err != nil {
-		if strings.Contains(err.Error(), "quotaExceeded") {
-			time.Sleep(2 * time.Second)
-			return resourceGroupCreate(d, meta)
-		}
 		return fmt.Errorf("Error creating group: %s", err)
 	}
 
@@ -126,12 +130,14 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 		group.NullFields = nullFields
 	}
 
-	updatedGroup, err := config.directory.Groups.Patch(d.Id(), group).Do()
+	var updatedGroup *directory.Group
+	var err error
+	err = retry(func() error {
+		updatedGroup, err = config.directory.Groups.Patch(d.Id(), group).Do()
+		return err
+	})
+
 	if err != nil {
-		if strings.Contains(err.Error(), "quotaExceeded") {
-			time.Sleep(2 * time.Second)
-			return resourceGroupUpdate(d, meta)
-		}
 		return fmt.Errorf("Error updating group: %s", err)
 	}
 
@@ -142,13 +148,15 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	group, err := config.directory.Groups.Get(d.Id()).Do()
-	if err != nil {
-		if strings.Contains(err.Error(), "quotaExceeded") {
-			time.Sleep(2 * time.Second)
-			return resourceGroupRead(d, meta)
-		}
+	var group *directory.Group
+	var err error
+	err = retry(func() error {
+		group, err = config.directory.Groups.Get(d.Id()).Do()
 		return err
+	})
+
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("Group %q", d.Get("name").(string)))
 	}
 
   d.SetId(group.Id)
@@ -163,12 +171,17 @@ func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 func resourceGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	err := config.directory.Groups.Delete(d.Id()).Do()
-	if err != nil {
-		if strings.Contains(err.Error(), "quotaExceeded") {
-			time.Sleep(2 * time.Second)
-			return resourceGroupDelete(d, meta)
+	err := resource.Retry(1*time.Minute, func() *resource.RetryError {
+		err := config.directory.Groups.Delete(d.Id()).Do()
+		if err == nil {
+			return nil
 		}
+		if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 429) {
+			return resource.RetryableError(gerr)
+		}
+		return resource.NonRetryableError(err)
+	})
+	if err != nil {
 		return fmt.Errorf("Error deleting group: %s", err)
 	}
 
