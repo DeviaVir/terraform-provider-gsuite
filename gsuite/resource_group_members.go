@@ -47,7 +47,7 @@ func resourceGroupMembersRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceGroupMembersCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG]: Creating gsuite_group_members")
-	gid, err := createOrUpdateGroupMembers(d,meta)
+	gid, err := createOrUpdateGroupMembers(d, meta)
 
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func resourceGroupMembersCreate(d *schema.ResourceData, meta interface{}) error 
 
 func resourceGroupMembersUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG]: Updating gsuite_group_members")
-	_, err := createOrUpdateGroupMembers(d,meta)
+	_, err := createOrUpdateGroupMembers(d, meta)
 
 	if err != nil {
 		return err
@@ -151,7 +151,7 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 
 	var cfgRole, apiRole string
 
-	for k,apiMember := range apiMap {
+	for k, apiMember := range apiMap {
 		if cfgMember, ok := cfgMap[k]; !ok {
 			// The member in the API is not in the config; disable it.
 			err := deleteMember(k, gid, config)
@@ -194,11 +194,20 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 }
 
 // Retrieve a group's members from the API
-func getApiMembers(gid string, config *Config) (*directory.Members, error) {
+func getApiMembers(gid string, config *Config) ([]*directory.Member, error) {
 	// Get members from the API
-	groupMembers, err := config.directory.Members.List(gid).Do()
-	if err != nil {
-		return nil, err
+	groupMembers := make([]*directory.Member, 0)
+	token := ""
+	for paginate := true; paginate; {
+		membersResponse, err := config.directory.Members.List(gid).PageToken(token).Do()
+		if err != nil {
+			return groupMembers, err
+		}
+		for _, v := range membersResponse.Members {
+			groupMembers = append(groupMembers, v)
+		}
+		token = membersResponse.NextPageToken
+		paginate = token != ""
 	}
 	return groupMembers, nil
 }
@@ -209,7 +218,7 @@ func upsertMember(email, gid, role string, config *Config) error {
 		Email: email,
 	}
 
-	hasMember, err := config.directory.Members.HasMember(gid,email).Do()
+	hasMember, err := config.directory.Members.HasMember(gid, email).Do()
 	if err != nil {
 		return fmt.Errorf("Error checking hasmember: %s", err)
 	}
@@ -238,5 +247,3 @@ func deleteMember(email, gid string, config *Config) error {
 	}
 	return nil
 }
-
-
