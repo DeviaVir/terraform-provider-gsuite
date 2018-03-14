@@ -399,7 +399,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error updating user: %s", err)
+		return fmt.Errorf("Error creating user: %s", err)
 	}
 
   d.SetId(createdUser.Id)

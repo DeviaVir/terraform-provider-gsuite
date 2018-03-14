@@ -76,6 +76,10 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	})
 
+	if err != nil {
+		return fmt.Errorf("Error creating group member: %s", err)
+	}
+
   d.SetId(createdGroupMember.Id)
 	log.Printf("[INFO] Created group: %s", createdGroupMember.Email)
 	return resourceGroupMemberRead(d, meta)
@@ -103,6 +107,10 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	})
 
+	if err != nil {
+		return fmt.Errorf("Error updating group member: %s", err)
+	}
+
 	log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
 	return resourceGroupMemberRead(d, meta)
 }
@@ -118,7 +126,7 @@ func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("Group %q", d.Get("name").(string)))
+		return handleNotFoundError(err, d, fmt.Sprintf("Group member %q", d.Get("name").(string)))
 	}
 
   d.SetId(groupMember.Id)
