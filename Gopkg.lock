@@ -82,6 +82,12 @@
   version = "v3.5.1"
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
   revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
@@ -205,9 +211,11 @@
     "config/module",
     "dag",
     "flatmap",
+    "helper/config",
     "helper/hashcode",
     "helper/hilmapstructure",
     "helper/logging",
+    "helper/resource",
     "helper/schema",
     "moduledeps",
     "plugin",
@@ -484,6 +492,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7cc43ff3addcb07ed90b64c41871a61088382e25bce7a1a97074171dc43ad458"
+  inputs-digest = "d29a9b323f6d5bd2ab4214fba04638c4bfd1aa72f1a9af33281d6d1ade52e4c0"
   solver-name = "gps-cdcl"
   solver-version = 1
