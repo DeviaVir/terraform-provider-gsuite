@@ -167,10 +167,16 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 				groupMember := &directory.Member{
 					Role: cfgRole,
 				}
-				updatedGroupMember, err := config.directory.Members.Patch(
-					d.Get("group").(string),
-					cfgMember["email"].(string),
-					groupMember).Do()
+				var updatedGroupMember *directory.Member
+				var err error
+				err = retry(func() error {
+					updatedGroupMember, err = config.directory.Members.Patch(
+						d.Get("group").(string),
+						cfgMember["email"].(string),
+						groupMember).Do()
+					return err
+				})
+
 				if err != nil {
 					return fmt.Errorf("Error updating groupMember: %s", err)
 				}
@@ -198,8 +204,15 @@ func getApiMembers(gid string, config *Config) ([]*directory.Member, error) {
 	// Get members from the API
 	groupMembers := make([]*directory.Member, 0)
 	token := ""
+	var membersResponse *directory.Members
+	var err error
 	for paginate := true; paginate; {
-		membersResponse, err := config.directory.Members.List(gid).PageToken(token).Do()
+
+		err = retry(func() error {
+			membersResponse, err = config.directory.Members.List(gid).PageToken(token).Do()
+			return err
+		})
+
 		if err != nil {
 			return groupMembers, err
 		}
@@ -217,20 +230,32 @@ func upsertMember(email, gid, role string, config *Config) error {
 		Role:  role,
 		Email: email,
 	}
-
-	hasMember, err := config.directory.Members.HasMember(gid, email).Do()
+	var hasMemberResponse *directory.MembersHasMember
+	var err error
+	err = retry(func() error {
+		hasMemberResponse, err = config.directory.Members.HasMember(gid, email).Do()
+		return err
+	})
 	if err != nil {
 		return fmt.Errorf("Error checking hasmember: %s", err)
 	}
 
-	if hasMember.IsMember == true {
-		updatedGroupMember, err := config.directory.Members.Update(gid, email, groupMember).Do()
+	if hasMemberResponse.IsMember == true {
+		var updatedGroupMember *directory.Member
+		err = retry(func() error {
+			updatedGroupMember, err = config.directory.Members.Update(gid, email, groupMember).Do()
+			return err
+		})
 		if err != nil {
 			return fmt.Errorf("Error updating groupMember: %s", err)
 		}
 		log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
 	} else {
-		createdGroupMember, err := config.directory.Members.Insert(gid, groupMember).Do()
+		var createdGroupMember *directory.Member
+		err = retry(func() error {
+			createdGroupMember, err = config.directory.Members.Insert(gid, groupMember).Do()
+			return err
+		})
 		if err != nil {
 			return fmt.Errorf("Error creating groupMember: %s", err)
 		}
@@ -240,8 +265,12 @@ func upsertMember(email, gid, role string, config *Config) error {
 	return nil
 }
 
-func deleteMember(email, gid string, config *Config) error {
-	err := config.directory.Members.Delete(gid, email).Do()
+func deleteMember(email, gid string, config *Config) (err error) {
+	err = retry(func() error {
+		err = config.directory.Members.Delete(gid, email).Do()
+		return err
+	})
+
 	if err != nil {
 		return fmt.Errorf("Error deleting member: %s", err)
 	}
