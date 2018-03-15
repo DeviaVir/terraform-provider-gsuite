@@ -9,6 +9,48 @@ import (
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
+var schemaMember = map[string]*schema.Schema{
+	"etag": &schema.Schema{
+		Type:     schema.TypeString,
+		Computed: true,
+	},
+
+	"kind": &schema.Schema{
+		Type:     schema.TypeString,
+		Computed: true,
+	},
+
+	"status": &schema.Schema{
+		Type:     schema.TypeString,
+		Computed: true,
+	},
+
+	"type": &schema.Schema{
+		Type:     schema.TypeString,
+		Computed: true,
+	},
+
+	"role": &schema.Schema{
+		Type:     schema.TypeString,
+		Default:  "MEMBER",
+		Optional: true,
+	},
+
+	"email": &schema.Schema{
+		Type:     schema.TypeString,
+		Required: true,
+	},
+}
+
+var schemaGroup = map[string]*schema.Schema{
+	"group": &schema.Schema{
+		Type:     schema.TypeString,
+		Required: true,
+	},
+}
+
+var schemaMembership = mergeSchemas(schemaGroup, schemaMember)
+
 func resourceGroupMember() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceGroupMemberCreate,
@@ -16,43 +58,7 @@ func resourceGroupMember() *schema.Resource {
 		Update: resourceGroupMemberUpdate,
 		Delete: resourceGroupMemberDelete,
 
-		Schema: map[string]*schema.Schema{
-			"group": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-
-			"etag": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-
-			"kind": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-
-			"status": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-
-			"type": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-
-			"role": &schema.Schema{
-				Type:     schema.TypeString,
-				Default:  "MEMBER",
-				Optional: true,
-			},
-
-			"email": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
+		Schema: schemaMembership,
 	}
 }
 

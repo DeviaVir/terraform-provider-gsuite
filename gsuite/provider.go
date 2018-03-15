@@ -20,6 +20,7 @@ func Provider() *schema.Provider {
 			"gsuite_group": resourceGroup(),
 			"gsuite_user": resourceUser(),
 			"gsuite_group_member": resourceGroupMember(),
+			"gsuite_group_members": resourceGroupMembers(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
