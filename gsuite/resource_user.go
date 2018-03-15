@@ -3,13 +3,10 @@ package gsuite
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/resource"
 
 	directory "google.golang.org/api/admin/directory/v1"
-	"google.golang.org/api/googleapi"
 )
 
 var googleLookup = map[string]string{
@@ -643,15 +640,10 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 func resourceUserDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	err := resource.Retry(1*time.Minute, func() *resource.RetryError {
-		err := config.directory.Users.Delete(d.Id()).Do()
-		if err == nil {
-			return nil
-		}
-		if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 429) {
-			return resource.RetryableError(gerr)
-		}
-		return resource.NonRetryableError(err)
+	var err error
+	err = retry(func() error {
+		err = config.directory.Users.Delete(d.Id()).Do()
+		return err
 	})
 	if err != nil {
 		return fmt.Errorf("Error deleting user: %s", err)

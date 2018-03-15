@@ -3,13 +3,10 @@ package gsuite
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/resource"
 
 	directory "google.golang.org/api/admin/directory/v1"
-	"google.golang.org/api/googleapi"
 )
 
 func resourceGroup() *schema.Resource {
@@ -171,15 +168,10 @@ func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 func resourceGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	err := resource.Retry(1*time.Minute, func() *resource.RetryError {
-		err := config.directory.Groups.Delete(d.Id()).Do()
-		if err == nil {
-			return nil
-		}
-		if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 429) {
-			return resource.RetryableError(gerr)
-		}
-		return resource.NonRetryableError(err)
+	var err error
+	err = retry(func() error {
+		err = config.directory.Groups.Delete(d.Id()).Do()
+		return err
 	})
 	if err != nil {
 		return fmt.Errorf("Error deleting group: %s", err)

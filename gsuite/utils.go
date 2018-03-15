@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"google.golang.org/api/googleapi"
@@ -23,57 +22,6 @@ func handleNotFoundError(err error, d *schema.ResourceData, resource string) err
 	}
 
 	return fmt.Errorf("Error reading %s: %s", resource, err)
-}
-
-func isConflictError(err error) bool {
-	if e, ok := err.(*googleapi.Error); ok && e.Code == 409 {
-		return true
-	} else if !ok && errwrap.ContainsType(err, &googleapi.Error{}) {
-		e := errwrap.GetType(err, &googleapi.Error{}).(*googleapi.Error)
-		if e.Code == 409 {
-			return true
-		}
-	}
-	return false
-}
-
-func convertStringMap(v map[string]interface{}) map[string]string {
-	m := make(map[string]string)
-	for k, val := range v {
-		m[k] = val.(string)
-	}
-	return m
-}
-
-func convertStringArr(ifaceArr []interface{}) []string {
-	return convertAndMapStringArr(ifaceArr, func(s string) string { return s })
-}
-
-func convertAndMapStringArr(ifaceArr []interface{}, f func(string) string) []string {
-	var arr []string
-	for _, v := range ifaceArr {
-		if v == nil {
-			continue
-		}
-		arr = append(arr, f(v.(string)))
-	}
-	return arr
-}
-
-func convertStringArrToInterface(strs []string) []interface{} {
-	arr := make([]interface{}, len(strs))
-	for i, str := range strs {
-		arr[i] = str
-	}
-	return arr
-}
-
-func convertStringSet(set *schema.Set) []string {
-	s := make([]string, 0, set.Len())
-	for _, v := range set.List() {
-		s = append(s, v.(string))
-	}
-	return s
 }
 
 func mergeSchemas(a, b map[string]*schema.Schema) map[string]*schema.Schema {
@@ -105,12 +53,4 @@ func retryTime(retryFunc func() error, minutes int) error {
 		}
 		return resource.NonRetryableError(err)
 	})
-}
-
-func extractFirstMapConfig(m []interface{}) map[string]interface{} {
-	if len(m) == 0 {
-		return map[string]interface{}{}
-	}
-
-	return m[0].(map[string]interface{})
 }
