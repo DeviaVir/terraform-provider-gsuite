@@ -1,6 +1,6 @@
 resource "gsuite_group" "testing_team" {
   email       = "testing-team@xxx.com"
-  name        = "testing-teamg@xxx.com"
+  name        = "testing-team@xxx.com"
   description = "Testing team group"
 }
 
