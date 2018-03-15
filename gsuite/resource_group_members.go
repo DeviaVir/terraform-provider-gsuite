@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	directory "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/googleapi"
 )
 
 func resourceGroupMembers() *schema.Resource {
@@ -234,6 +235,15 @@ func upsertMember(email, gid, role string, config *Config) error {
 	var err error
 	err = retry(func() error {
 		hasMemberResponse, err = config.directory.Members.HasMember(gid, email).Do()
+		if err == nil {
+		  return nil
+		}
+
+        // When a user does not exist, the API returns a 400 "memberKey, required"
+        // Returning a
+        if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "required" && gerr.Code == 400) {
+          return fmt.Errorf("Error adding groupMember %s. Please make sure the user exists beforehand.", email)
+        }
 		return err
 	})
 	if err != nil {
