@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform/helper/schema"
+
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
@@ -73,7 +74,13 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 		group.Description = v.(string)
 	}
 
-	createdGroup, err := config.directory.Groups.Insert(group).Do()
+	var createdGroup *directory.Group
+	var err error
+	err = retry(func() error {
+		createdGroup, err = config.directory.Groups.Insert(group).Do()
+		return err
+	})
+
 	if err != nil {
 		return fmt.Errorf("Error creating group: %s", err)
 	}
@@ -120,7 +127,13 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 		group.NullFields = nullFields
 	}
 
-	updatedGroup, err := config.directory.Groups.Patch(d.Id(), group).Do()
+	var updatedGroup *directory.Group
+	var err error
+	err = retry(func() error {
+		updatedGroup, err = config.directory.Groups.Patch(d.Id(), group).Do()
+		return err
+	})
+
 	if err != nil {
 		return fmt.Errorf("Error updating group: %s", err)
 	}
@@ -132,9 +145,15 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	group, err := config.directory.Groups.Get(d.Id()).Do()
-	if err != nil {
+	var group *directory.Group
+	var err error
+	err = retry(func() error {
+		group, err = config.directory.Groups.Get(d.Id()).Do()
 		return err
+	})
+
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("Group %q", d.Get("name").(string)))
 	}
 
   d.SetId(group.Id)
@@ -149,7 +168,11 @@ func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 func resourceGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	err := config.directory.Groups.Delete(d.Id()).Do()
+	var err error
+	err = retry(func() error {
+		err = config.directory.Groups.Delete(d.Id()).Do()
+		return err
+	})
 	if err != nil {
 		return fmt.Errorf("Error deleting group: %s", err)
 	}

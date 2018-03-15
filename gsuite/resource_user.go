@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform/helper/schema"
+
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
@@ -387,7 +388,13 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	user.Name = userName
 
-	createdUser, err := config.directory.Users.Insert(user).Do()
+	var createdUser *directory.User
+	var err error
+	err = retry(func() error {
+		createdUser, err = config.directory.Users.Insert(user).Do()
+		return err
+	})
+
 	if err != nil {
 		return fmt.Errorf("Error creating user: %s", err)
 	}
@@ -572,7 +579,13 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		user.NullFields = nullFields
 	}
 
-	updatedUser, err := config.directory.Users.Update(d.Id(), user).Do()
+	var updatedUser *directory.User
+	var err error
+	err = retry(func() error {
+		updatedUser, err = config.directory.Users.Update(d.Id(), user).Do()
+		return err
+	})
+
 	if err != nil {
 		return fmt.Errorf("Error updating user: %s", err)
 	}
@@ -584,9 +597,15 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	user, err := config.directory.Users.Get(d.Id()).Do()
-	if err != nil {
+	var user *directory.User
+	var err error
+	err = retry(func() error {
+		user, err = config.directory.Users.Get(d.Id()).Do()
 		return err
+	})
+
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Get("name").(string)))
 	}
 
 	d.SetId(user.Id)
@@ -621,7 +640,11 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 func resourceUserDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	err := config.directory.Users.Delete(d.Id()).Do()
+	var err error
+	err = retry(func() error {
+		err = config.directory.Users.Delete(d.Id()).Do()
+		return err
+	})
 	if err != nil {
 		return fmt.Errorf("Error deleting user: %s", err)
 	}

@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform/helper/schema"
+
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
@@ -65,9 +66,15 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		Email: d.Get("email").(string),
 	}
 
-	createdGroupMember, err := config.directory.Members.Insert(group, groupMember).Do()
+	var createdGroupMember *directory.Member
+	var err error
+	err = retry(func() error {
+		createdGroupMember, err = config.directory.Members.Insert(group, groupMember).Do()
+		return err
+	})
+
 	if err != nil {
-		return fmt.Errorf("Error creating groupMember: %s", err)
+		return fmt.Errorf("Error creating group member: %s", err)
 	}
 
   d.SetId(createdGroupMember.Id)
@@ -90,9 +97,15 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 		groupMember.NullFields = nullFields
 	}
 
-	updatedGroupMember, err := config.directory.Members.Patch(d.Get("group").(string), d.Id(), groupMember).Do()
+	var updatedGroupMember *directory.Member
+	var err error
+	err = retry(func() error {
+		updatedGroupMember, err = config.directory.Members.Patch(d.Get("group").(string), d.Id(), groupMember).Do()
+		return err
+	})
+
 	if err != nil {
-		return fmt.Errorf("Error updating groupMember: %s", err)
+		return fmt.Errorf("Error updating group member: %s", err)
 	}
 
 	log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
@@ -102,9 +115,15 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	groupMember, err := config.directory.Members.Get(d.Get("group").(string), d.Id()).Do()
-	if err != nil {
+	var groupMember *directory.Member
+	var err error
+	err = retry(func() error {
+		groupMember, err = config.directory.Members.Get(d.Get("group").(string), d.Id()).Do()
 		return err
+	})
+
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("Group member %q", d.Get("name").(string)))
 	}
 
   d.SetId(groupMember.Id)
@@ -120,9 +139,13 @@ func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 func resourceGroupMemberDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	err := config.directory.Members.Delete(d.Get("group").(string), d.Id()).Do()
+	var err error
+	err = retry(func() error {
+		err = config.directory.Members.Delete(d.Get("group").(string), d.Id()).Do()
+		return err
+	})
 	if err != nil {
-		return fmt.Errorf("Error deleting group: %s", err)
+		return fmt.Errorf("Error deleting group member: %s", err)
 	}
 
 	d.SetId("")
