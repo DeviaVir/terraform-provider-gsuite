@@ -80,14 +80,14 @@ func resourceGroupMembersDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-func membersToCfg(members *directory.Members) []map[string]interface{} {
+func membersToCfg(members []*directory.Member) []map[string]interface{} {
 	if members == nil {
 		return nil
 	}
 
-	finalMembers := make([]map[string]interface{}, 0, len(members.Members))
+	finalMembers := make([]map[string]interface{}, 0, len(members))
 
-	for _, m := range members.Members {
+	for _, m := range members {
 		finalMembers = append(finalMembers, map[string]interface{}{
 			"email":  m.Email,
 			"etag":   m.Etag,
