@@ -24,20 +24,6 @@ func handleNotFoundError(err error, d *schema.ResourceData, resource string) err
 	return fmt.Errorf("Error reading %s: %s", resource, err)
 }
 
-func mergeSchemas(a, b map[string]*schema.Schema) map[string]*schema.Schema {
-	merged := make(map[string]*schema.Schema)
-
-	for k, v := range a {
-		merged[k] = v
-	}
-
-	for k, v := range b {
-		merged[k] = v
-	}
-
-	return merged
-}
-
 func retry(retryFunc func() error) error {
 	return retryTime(retryFunc, 1)
 }
