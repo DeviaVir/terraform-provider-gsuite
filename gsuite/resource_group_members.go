@@ -285,10 +285,10 @@ func upsertMember(email, gid, role string, config *Config) error {
 			}
 
 			// When a user does not exist, the API returns a 400 "memberKey, required"
-      // Returning a friendly message
-      if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "required" && gerr.Code == 400) {
-        return fmt.Errorf("Error adding groupMember %s. Please make sure the user exists beforehand.", email)
-      }
+			// Returning a friendly message
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "required" && gerr.Code == 400) {
+			  return fmt.Errorf("Error adding groupMember %s. Please make sure the user exists beforehand.", email)
+			}
 			return err
 		})
 		if err != nil {
