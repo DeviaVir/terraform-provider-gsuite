@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"os"
+	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 )
 
@@ -16,6 +19,22 @@ var (
 // Provider returns the actual provider instance.
 func Provider() *schema.Provider {
 	return &schema.Provider{
+		Schema: map[string]*schema.Schema{
+			"credentials": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"GOOGLE_CREDENTIALS",
+					"GOOGLE_CLOUD_KEYFILE_JSON",
+					"GCLOUD_KEYFILE_JSON",
+				}, nil),
+				ValidateFunc: validateCredentials,
+			},
+			"impersonated_user_email": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+		},
 		ResourcesMap: map[string]*schema.Resource{
 			"gsuite_group": resourceGroup(),
 			"gsuite_user": resourceUser(),
@@ -26,18 +45,40 @@ func Provider() *schema.Provider {
 	}
 }
 
-// providerConfigure configures the provider. Normally this would use schema
-// data from the provider, but the provider loads all its configuration from the
-// environment, so we just tell the config to load.
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	var c Config
-	if err := c.loadAndValidate(); err != nil {
+	credentials := d.Get("credentials").(string)
+	impersonatedUserEmail := d.Get("impersonated_user_email").(string)
+	config := Config{
+		Credentials: credentials,
+		ImpersonatedUserEmail: impersonatedUserEmail,
+	}
+
+	if err := config.loadAndValidate(); err != nil {
 		return nil, errors.Wrap(err, "failed to load config")
 	}
-	return &c, nil
+
+	return &config, nil
 }
 
 // contextWithTimeout creates a new context with the global context timeout.
 func contextWithTimeout() (context.Context, func()) {
 	return context.WithTimeout(context.Background(), contextTimeout)
+}
+
+func validateCredentials(v interface{}, k string) (warnings []string, errors []error) {
+	if v == nil || v.(string) == "" {
+		return
+	}
+	creds := v.(string)
+	// if this is a path and we can stat it, assume it's ok
+	if _, err := os.Stat(creds); err == nil {
+		return
+	}
+	var account accountFile
+	if err := json.Unmarshal([]byte(creds), &account); err != nil {
+		errors = append(errors,
+			fmt.Errorf("credentials are not valid JSON '%s': %s", creds, err))
+	}
+
+	return
 }
