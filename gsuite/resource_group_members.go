@@ -168,6 +168,11 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 				groupMember := &directory.Member{
 					Role: cfgRole,
 				}
+
+				if cfgRole != "MEMBER" {
+					return fmt.Errorf("Error updating groupMember (%s): nested groups should be role MEMBER", cfgMember["email"].(string))
+				}
+
 				var updatedGroupMember *directory.Member
 				var err error
 				err = retry(func() error {
@@ -231,45 +236,101 @@ func upsertMember(email, gid, role string, config *Config) error {
 		Role:  role,
 		Email: email,
 	}
-	var hasMemberResponse *directory.MembersHasMember
+
+	// Check if the email address belongs to a user, or to a group
+	// we need to make sure, because we need to use different logic
+	var isGroup bool
+	var group *directory.Group
 	var err error
 	err = retry(func() error {
-		hasMemberResponse, err = config.directory.Members.HasMember(gid, email).Do()
-		if err == nil {
-		  return nil
-		}
-
-        // When a user does not exist, the API returns a 400 "memberKey, required"
-        // Returning a
-        if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "required" && gerr.Code == 400) {
-          return fmt.Errorf("Error adding groupMember %s. Please make sure the user exists beforehand.", email)
-        }
+		group, err = config.directory.Groups.Get(email).Do()
 		return err
 	})
+	isGroup = true
 	if err != nil {
-		return fmt.Errorf("Error checking hasmember: %s", err)
+		isGroup = false
 	}
 
-	if hasMemberResponse.IsMember == true {
-		var updatedGroupMember *directory.Member
+	if isGroup == true {
+		if role != "MEMBER" {
+			return fmt.Errorf("Error creating groupMember (%s): nested groups should be role MEMBER", email)
+		}
+
+		// Grab the group as a directory member of the current group
+		var currentMember *directory.Member
+		var err error
 		err = retry(func() error {
-			updatedGroupMember, err = config.directory.Members.Update(gid, email, groupMember).Do()
+			currentMember, err = config.directory.Members.Get(gid, email).Do()
+			return err
+		})
+
+		// Based on the err return, either add as a new member, or update
+		if err != nil {
+			var createdGroupMember *directory.Member
+			err = retry(func() error {
+				createdGroupMember, err = config.directory.Members.Insert(gid, groupMember).Do()
+				return err
+			})
+			if err != nil {
+				return fmt.Errorf("Error creating groupMember: %s, %s", err, email)
+			}
+			log.Printf("[INFO] Created groupMember: %s", createdGroupMember.Email)
+		} else {
+			var updatedGroupMember *directory.Member
+			err = retry(func() error {
+				updatedGroupMember, err = config.directory.Members.Update(gid, email, groupMember).Do()
+				return err
+			})
+			if err != nil {
+				return fmt.Errorf("Error updating groupMember: %s, %s", err, email)
+			}
+			log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
+		}
+	}
+
+	if isGroup == false {
+		// Basically the same check as group, but using a more apt method "HasMember"
+		// specifically meant for users
+		var hasMemberResponse *directory.MembersHasMember
+		var err error
+		err = retry(func() error {
+			hasMemberResponse, err = config.directory.Members.HasMember(gid, email).Do()
+			if err == nil {
+				return err
+			}
+
+			// When a user does not exist, the API returns a 400 "memberKey, required"
+			// Returning a friendly message
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "required" && gerr.Code == 400) {
+			  return fmt.Errorf("Error adding groupMember %s. Please make sure the user exists beforehand.", email)
+			}
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("Error updating groupMember: %s", err)
+			return fmt.Errorf("Error checking hasmember: %s, %s", err, email)
 		}
-		log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
-	} else {
-		var createdGroupMember *directory.Member
-		err = retry(func() error {
-			createdGroupMember, err = config.directory.Members.Insert(gid, groupMember).Do()
-			return err
-		})
-		if err != nil {
-			return fmt.Errorf("Error creating groupMember: %s", err)
+
+		if hasMemberResponse.IsMember == true {
+			var updatedGroupMember *directory.Member
+			err = retry(func() error {
+				updatedGroupMember, err = config.directory.Members.Update(gid, email, groupMember).Do()
+				return err
+			})
+			if err != nil {
+				return fmt.Errorf("Error updating groupMember: %s, %s", err, email)
+			}
+			log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
+		} else {
+			var createdGroupMember *directory.Member
+			err = retry(func() error {
+				createdGroupMember, err = config.directory.Members.Insert(gid, groupMember).Do()
+				return err
+			})
+			if err != nil {
+				return fmt.Errorf("Error creating groupMember: %s, %s", err, email)
+			}
+			log.Printf("[INFO] Created groupMember: %s", createdGroupMember.Email)
 		}
-		log.Printf("[INFO] Created groupMember: %s", createdGroupMember.Email)
 	}
 
 	return nil
