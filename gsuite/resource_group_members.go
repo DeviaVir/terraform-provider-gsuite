@@ -231,7 +231,9 @@ func upsertMember(email, gid, role string, config *Config) error {
 		Role:  role,
 		Email: email,
 	}
-
+	
+	// Check if the email address belongs to a user, or to a group
+	// we need to make sure, because we need to use different logic
 	var isGroup bool
 	var group *directory.Group
 	var err error
@@ -245,13 +247,15 @@ func upsertMember(email, gid, role string, config *Config) error {
 	}
 
 	if isGroup == true {
+		// Grab the group as a directory member of the current group
 		var currentMember *directory.Member
 		var err error
 		err = retry(func() error {
 			currentMember, err = config.directory.Members.Get(gid, email).Do()
 			return err
 		})
-
+		
+		// Based on the err return, either add as a new member, or update
 		if err != nil {
 			var createdGroupMember *directory.Member
 			err = retry(func() error {
@@ -276,6 +280,8 @@ func upsertMember(email, gid, role string, config *Config) error {
 	}
 
 	if isGroup == false {
+		// Basically the same check as group, but using a more apt method "HasMember"
+		// specifically meant for users
 		var hasMemberResponse *directory.MembersHasMember
 		var err error
 		err = retry(func() error {
