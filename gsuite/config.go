@@ -52,7 +52,7 @@ func (c *Config) loadAndValidate() error {
 			return fmt.Errorf("Error loading credentials: %s", err)
 		}
 
-		//// Assume account_file is a JSON string
+		// Assume account_file is a JSON string
 		if err := parseJSON(&account, contents); err != nil {
 			return fmt.Errorf("Error parsing credentials '%s': %s", contents, err)
 		}
