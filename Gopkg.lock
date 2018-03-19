@@ -215,6 +215,7 @@
     "helper/hashcode",
     "helper/hilmapstructure",
     "helper/logging",
+    "helper/pathorcontents",
     "helper/resource",
     "helper/schema",
     "moduledeps",
@@ -492,6 +493,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d29a9b323f6d5bd2ab4214fba04638c4bfd1aa72f1a9af33281d6d1ade52e4c0"
+  inputs-digest = "1b3ebb9000cfc4be6291ee05278a79d221b65293efdb5eb24ac7a06225be8753"
   solver-name = "gps-cdcl"
   solver-version = 1
