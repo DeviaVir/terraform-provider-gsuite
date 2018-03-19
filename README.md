@@ -31,7 +31,7 @@ https://developers.google.com/admin-sdk/directory/v1/guides/delegation.
 Add `credentials` and `impersonated_user_email` when initializing the provider.
 ```
 provider "gsuite" {
-  credentials = "./service-account.json"
+  credentials = "/full/path/service-account.json"
   impersonated_user_email = "admin@xxx.com"
 }
 ```
