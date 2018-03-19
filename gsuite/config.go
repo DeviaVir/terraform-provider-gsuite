@@ -47,6 +47,10 @@ func (c *Config) loadAndValidate() error {
 
 	var client *http.Client
 	if c.Credentials != "" {
+		if c.ImpersonatedUserEmail == "" {
+			return fmt.Errorf("required field missing: impersonated_user_email")
+		}
+
 		contents, _, err := pathorcontents.Read(c.Credentials)
 		if err != nil {
 			return fmt.Errorf("Error loading credentials: %s", err)
