@@ -2,7 +2,46 @@
 
 This is a terraform provider for managing GSuite (Admin SDK) resources on Google
 
-## Setup
+## Authentication
+
+There are two possible authentication mechanisms for using this provider.
+Using a service account, or a personal admin account. The latter requires
+user interaction, whereas a service account could be used in an automated
+workflow.
+
+See the necessary oauth scopes both for service accounts and users below:
+- https://www.googleapis.com/auth/admin.directory.customer
+- https://www.googleapis.com/auth/admin.directory.group
+- https://www.googleapis.com/auth/admin.directory.orgunit
+- https://www.googleapis.com/auth/admin.directory.user
+- https://www.googleapis.com/auth/admin.directory.userschema
+- https://www.googleapis.com/auth/userinfo.email
+
+### Using a service account
+
+Service accounts are great for automated workflows.
+
+Only users with access to the Admin APIs can access the Admin SDK Directory API,
+therefore the service account needs to impersonate one of those users
+to access the Admin SDK Directory API.
+
+Follow the instruction at
+https://developers.google.com/admin-sdk/directory/v1/guides/delegation.
+
+Add `credentials` and `impersonated_user_email` when initializing the provider.
+```
+provider "gsuite" {
+  credentials = "./service-account.json"
+  impersonated_user_email = "admin@xxx.com"
+}
+```
+
+Credentials can also be provided via the following environment variables:
+- GOOGLE_CREDENTIALS
+- GOOGLE_CLOUD_KEYFILE_JSON
+- GCLOUD_KEYFILE_JSON
+
+### Using a personal administrator account
 
 In order to use the Admin SDK with a project, we will first need to create
 credentials for that project, you can do so here:
