@@ -168,6 +168,11 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 				groupMember := &directory.Member{
 					Role: cfgRole,
 				}
+
+				if cfgRole != "MEMBER" {
+					return fmt.Errorf("Error updating groupMember (%s): nested groups should be role MEMBER", cfgMember["email"].(string))
+				}
+
 				var updatedGroupMember *directory.Member
 				var err error
 				err = retry(func() error {
@@ -245,6 +250,10 @@ func upsertMember(email, gid, role string, config *Config) error {
 	}
 
 	if isGroup == true {
+		if role != "MEMBER" {
+			return fmt.Errorf("Error creating groupMember (%s): nested groups should be role MEMBER", email)
+		}
+
 		var currentMember *directory.Member
 		var err error
 		err = retry(func() error {
