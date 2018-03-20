@@ -1,8 +1,8 @@
 package gsuite
 
 import (
-"io/ioutil"
-"testing"
+	"io/ioutil"
+	"testing"
 )
 
 const testFakeCredentialsPath = "./test-fixtures/fake_account.json"
@@ -42,5 +42,34 @@ func TestConfigLoadAndValidate_accountFileJSONInvalid(t *testing.T) {
 
 	if config.loadAndValidate() == nil {
 		t.Fatalf("expected error, but got nil")
+	}
+}
+
+func TestConfigLoadAndValidate_noImpersonatedEmail(t *testing.T) {
+	// ImpersonatedUserEmail empty string when credentials set
+	config := Config{
+		Credentials: testFakeCredentialsPath,
+		ImpersonatedUserEmail: "",
+	}
+
+	err := config.loadAndValidate()
+	if err == nil {
+		t.Fatalf("error: %v", err)
+	}
+	if err.Error() != "required field missing: impersonated_user_email" {
+		t.Fatalf("error: %v", err)
+	}
+
+	// ImpersonatedUserEmail not provided when credentials set
+	config = Config{
+		Credentials: testFakeCredentialsPath,
+	}
+
+	err = config.loadAndValidate()
+	if err == nil {
+		t.Fatalf("error: %v", err)
+	}
+	if err.Error() != "required field missing: impersonated_user_email" {
+		t.Fatalf("error: %v", err)
 	}
 }
