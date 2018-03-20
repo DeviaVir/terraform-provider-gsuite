@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"log"
 )
 
 var (
@@ -34,6 +35,11 @@ func Provider() *schema.Provider {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"oauth_scopes": &schema.Schema{
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"gsuite_group": resourceGroup(),
@@ -48,9 +54,15 @@ func Provider() *schema.Provider {
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	credentials := d.Get("credentials").(string)
 	impersonatedUserEmail := d.Get("impersonated_user_email").(string)
+	oauthScopes := convertStringSet(d.Get("oauth_scopes").(*schema.Set))
+	if len(oauthScopes) == 0 {
+		log.Printf("[INFO] No Oauth Scopes provided. Using default oauth scopes.")
+		oauthScopes = defaultOauthScopes
+	}
 	config := Config{
 		Credentials: credentials,
 		ImpersonatedUserEmail: impersonatedUserEmail,
+		OauthScopes: oauthScopes,
 	}
 
 	if err := config.loadAndValidate(); err != nil {

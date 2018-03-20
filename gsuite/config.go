@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 )
 
-var oauthScopes = []string{
+var defaultOauthScopes = []string{
 	directory.AdminDirectoryCustomerScope,
 	directory.AdminDirectoryGroupScope,
 	directory.AdminDirectoryGroupMemberScope,
@@ -37,6 +37,8 @@ type Config struct {
 	// See https://developers.google.com/admin-sdk/directory/v1/guides/delegation
 	ImpersonatedUserEmail string
 
+	OauthScopes []string
+
 	directory *directory.Service
 }
 
@@ -44,6 +46,10 @@ type Config struct {
 // environment and creates a client for communicating with Google APIs.
 func (c *Config) loadAndValidate() error {
 	var account accountFile
+
+	oauthScopes := c.OauthScopes
+
+
 
 	var client *http.Client
 	if c.Credentials != "" {

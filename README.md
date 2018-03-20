@@ -17,6 +17,17 @@ See the necessary oauth scopes both for service accounts and users below:
 - https://www.googleapis.com/auth/admin.directory.userschema
 - https://www.googleapis.com/auth/userinfo.email
 
+You could also provide the minimal set of scopes using the
+`oauth_scopes` variable in the provider configuration.
+
+```
+provider "gsuite" {
+  oauth_scopes = [
+    "https://www.googleapis.com/auth/admin.directory.group"
+  ]
+}
+```
+
 ### Using a service account
 
 Service accounts are great for automated workflows.
