@@ -51,14 +51,19 @@ func Provider() *schema.Provider {
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	credentials := d.Get("credentials").(string)
-	impersonatedUserEmail := d.Get("impersonated_user_email").(string)
-	oauthScopes := convertStringSet(d.Get("oauth_scopes").(*schema.Set))
+func oauthScopesFromConfigOrDefault(oauthScopesSet *schema.Set) []string {
+	oauthScopes := convertStringSet(oauthScopesSet)
 	if len(oauthScopes) == 0 {
 		log.Printf("[INFO] No Oauth Scopes provided. Using default oauth scopes.")
 		oauthScopes = defaultOauthScopes
 	}
+	return oauthScopes
+}
+
+func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+	credentials := d.Get("credentials").(string)
+	impersonatedUserEmail := d.Get("impersonated_user_email").(string)
+	oauthScopes := oauthScopesFromConfigOrDefault(d.Get("oauth_scopes").(*schema.Set))
 	config := Config{
 		Credentials: credentials,
 		ImpersonatedUserEmail: impersonatedUserEmail,
