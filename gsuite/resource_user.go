@@ -303,19 +303,19 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 
 
 	if v, ok := d.GetOk("change_password_next_login"); ok {
-		log.Printf("[DEBUG] Setting %s: %s", "change_password_next_login", v.(bool))
+		log.Printf("[DEBUG] Setting %s: %t", "change_password_next_login", v.(bool))
 		user.ChangePasswordAtNextLogin = v.(bool)
 	}
 	if v, ok := d.GetOk("include_in_global_list"); ok {
-		log.Printf("[DEBUG] Setting %s: %s", "include_in_global_list", v.(bool))
+		log.Printf("[DEBUG] Setting %s: %t", "include_in_global_list", v.(bool))
 		user.IncludeInGlobalAddressList = v.(bool)
 	}
 	if v, ok := d.GetOk("is_ip_whitelisted"); ok {
-		log.Printf("[DEBUG] Setting %s: %s", "is_ip_whitelisted", v.(bool))
+		log.Printf("[DEBUG] Setting %s: %t", "is_ip_whitelisted", v.(bool))
 		user.IpWhitelisted = v.(bool)
 	}
 	if v, ok := d.GetOk("is_suspended"); ok {
-		log.Printf("[DEBUG] Setting %s: %s", "is_suspended", v.(bool))
+		log.Printf("[DEBUG] Setting %s: %t", "is_suspended", v.(bool))
 		user.Suspended = v.(bool)
 	}
 
@@ -326,7 +326,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		userSsh := &directory.UserSshPublicKey{}
 
 		if v, ok := sshConfig["expiration_time_usec"]; ok {
-			log.Printf("[DEBUG] Setting ssh %d expiration_time_usec: %s", i, int64(v.(int)))
+			log.Printf("[DEBUG] Setting ssh %d expiration_time_usec: %v", i, int64(v.(int)))
 			userSsh.ExpirationTimeUsec = int64(v.(int))
 		}
 		if v, ok := sshConfig["key"]; ok {
@@ -349,7 +349,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 			userPosix.Gecos = posixConfig["gecos"].(string)
 		}
 		if posixConfig["gid"] != 0 {
-			log.Printf("[DEBUG] Setting posix %d gid: %s", i, uint64(posixConfig["gid"].(int)))
+			log.Printf("[DEBUG] Setting posix %d gid: %d", i, uint64(posixConfig["gid"].(int)))
 			userPosix.Gid = uint64(posixConfig["gid"].(int))
 		}
 		if posixConfig["home_directory"] != "" {
@@ -365,11 +365,11 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 			userPosix.Shell = posixConfig["shell"].(string)
 		}
 		if posixConfig["primary"] != "" {
-			log.Printf("[DEBUG] Setting posix %d primary: %s", i, posixConfig["primary"].(bool))
+			log.Printf("[DEBUG] Setting posix %d primary: %t", i, posixConfig["primary"].(bool))
 			userPosix.Primary = posixConfig["primary"].(bool)
 		}
 		if posixConfig["uid"] != 0 {
-			log.Printf("[DEBUG] Setting posix %d uid: %s", i, uint64(posixConfig["uid"].(int)))
+			log.Printf("[DEBUG] Setting posix %d uid: %d", i, uint64(posixConfig["uid"].(int)))
 			userPosix.Uid = uint64(posixConfig["uid"].(int))
 		}
 		if posixConfig["username"] != "" {
@@ -463,7 +463,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if d.HasChange("change_password_next_login") {
 		if v, ok := d.GetOk("change_password_next_login"); ok {
-			log.Printf("[DEBUG] Updating user change_password_next_login: %s", d.Get("change_password_next_login").(bool))
+			log.Printf("[DEBUG] Updating user change_password_next_login: %t", d.Get("change_password_next_login").(bool))
 			user.ChangePasswordAtNextLogin = v.(bool)
 		} else {
 			log.Printf("[DEBUG] Removing user change_password_next_login")
@@ -473,7 +473,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	if d.HasChange("include_in_global_list") {
 		if v, ok := d.GetOk("include_in_global_list"); ok {
-			log.Printf("[DEBUG] Updating user include_in_global_list: %s", d.Get("include_in_global_list").(bool))
+			log.Printf("[DEBUG] Updating user include_in_global_list: %t", d.Get("include_in_global_list").(bool))
 			user.IncludeInGlobalAddressList = v.(bool)
 		} else {
 			log.Printf("[DEBUG] Removing user include_in_global_list")
@@ -483,7 +483,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	if d.HasChange("is_ip_whitelisted") {
 		if v, ok := d.GetOk("is_ip_whitelisted"); ok {
-			log.Printf("[DEBUG] Updating user is_ip_whitelisted: %s", d.Get("is_ip_whitelisted").(bool))
+			log.Printf("[DEBUG] Updating user is_ip_whitelisted: %t", d.Get("is_ip_whitelisted").(bool))
 			user.IpWhitelisted = v.(bool)
 		} else {
 			log.Printf("[DEBUG] Removing user is_ip_whitelisted")
@@ -493,7 +493,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	if d.HasChange("is_suspended") {
 		if v, ok := d.GetOk("is_suspended"); ok {
-			log.Printf("[DEBUG] Updating user is_suspended: %s", d.Get("is_suspended").(bool))
+			log.Printf("[DEBUG] Updating user is_suspended: %t", d.Get("is_suspended").(bool))
 			user.Suspended = v.(bool)
 		} else {
 			log.Printf("[DEBUG] Removing user is_suspended")
@@ -510,7 +510,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 			userSsh := &directory.UserSshPublicKey{}
 
 			if v, ok := sshConfig["expiration_time_usec"]; ok {
-				log.Printf("[DEBUG] Setting ssh %d expiration_time_usec: %s", i, int64(v.(int)))
+				log.Printf("[DEBUG] Setting ssh %d expiration_time_usec: %v", i, int64(v.(int)))
 				userSsh.ExpirationTimeUsec = int64(v.(int))
 			}
 			if v, ok := sshConfig["key"]; ok {
@@ -535,7 +535,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 				userPosix.Gecos = posixConfig["gecos"].(string)
 			}
 			if posixConfig["gid"] != 0 {
-				log.Printf("[DEBUG] Setting posix %d gid: %s", i, uint64(posixConfig["gid"].(int)))
+				log.Printf("[DEBUG] Setting posix %d gid: %d", i, uint64(posixConfig["gid"].(int)))
 				userPosix.Gid = uint64(posixConfig["gid"].(int))
 			}
 			if posixConfig["home_directory"] != "" {
@@ -551,11 +551,11 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 				userPosix.Shell = posixConfig["shell"].(string)
 			}
 			if posixConfig["primary"] != "" {
-				log.Printf("[DEBUG] Setting posix %d primary: %s", i, posixConfig["primary"].(bool))
+				log.Printf("[DEBUG] Setting posix %d primary: %t", i, posixConfig["primary"].(bool))
 				userPosix.Primary = posixConfig["primary"].(bool)
 			}
 			if posixConfig["uid"] != 0 {
-				log.Printf("[DEBUG] Setting posix %d uid: %s", i, uint64(posixConfig["uid"].(int)))
+				log.Printf("[DEBUG] Setting posix %d uid: %d", i, uint64(posixConfig["uid"].(int)))
 				userPosix.Uid = uint64(posixConfig["uid"].(int))
 			}
 			if posixConfig["username"] != "" {

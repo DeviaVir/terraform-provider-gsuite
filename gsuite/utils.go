@@ -54,3 +54,11 @@ func mergeSchemas(a, b map[string]*schema.Schema) map[string]*schema.Schema {
 
 	return merged
 }
+
+func convertStringSet(set *schema.Set) []string {
+	s := make([]string, 0, set.Len())
+	for _, v := range set.List() {
+		s = append(s, v.(string))
+	}
+	return s
+}

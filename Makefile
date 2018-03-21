@@ -95,6 +95,12 @@ dev:
 		-tags "${GOTAGS}" \
 		-o "${PLUGIN_PATH}/terraform-provider-gsuite"
 
+# test runs all tests
+test:
+	go test -i $(TEST) || exit 1
+	echo $(TEST) | \
+		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
+
 # dist builds the binaries and then signs and packages them for distribution
 dist:
 ifndef GPG_KEY
