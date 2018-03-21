@@ -11,10 +11,13 @@ import (
 
 func resourceGroupMembers() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceGroupMembersCreate,
-		Read:   resourceGroupMembersRead,
-		Update: resourceGroupMembersUpdate,
-		Delete: resourceGroupMembersDelete,
+		Create:   resourceGroupMembersCreate,
+		Read:     resourceGroupMembersRead,
+		Update:   resourceGroupMembersUpdate,
+		Delete:   resourceGroupMembersDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceGroupMembersImporter,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"group": {
@@ -302,7 +305,7 @@ func upsertMember(email, gid, role string, config *Config) error {
 			// When a user does not exist, the API returns a 400 "memberKey, required"
 			// Returning a friendly message
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "required" && gerr.Code == 400) {
-			  return fmt.Errorf("Error adding groupMember %s. Please make sure the user exists beforehand.", email)
+				return fmt.Errorf("Error adding groupMember %s. Please make sure the user exists beforehand.", email)
 			}
 			return err
 		})
@@ -346,4 +349,19 @@ func deleteMember(email, gid string, config *Config) (err error) {
 		return fmt.Errorf("Error deleting member: %s", err)
 	}
 	return nil
+}
+
+// Allow importing using any groupKey (id, email, alias)
+func resourceGroupMembersImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(*Config)
+
+	id, err := config.directory.Groups.Get(d.Id()).Do()
+
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching group id. Make sure the group exists: %s ", err)
+	}
+
+	d.SetId(id.Id)
+
+	return []*schema.ResourceData{d}, nil
 }
