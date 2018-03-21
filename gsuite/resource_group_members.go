@@ -355,13 +355,18 @@ func deleteMember(email, gid string, config *Config) (err error) {
 func resourceGroupMembersImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
 
-	id, err := config.directory.Groups.Get(d.Id()).Do()
+	var group *directory.Group
+	var err error
+	err = retry(func() error {
+		group, err = config.directory.Groups.Get(d.Id()).Do()
+		return err
+	})
 
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching group id. Make sure the group exists: %s ", err)
 	}
 
-	d.SetId(id.Id)
+	d.SetId(group.Id)
 
 	return []*schema.ResourceData{d}, nil
 }
