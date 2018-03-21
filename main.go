@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/deviavir/terraform-provider-gsuite/gsuite"
+	"github.com/DeviaVir/terraform-provider-gsuite/gsuite"
 )
 
 func main() {
