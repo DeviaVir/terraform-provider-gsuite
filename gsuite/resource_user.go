@@ -349,7 +349,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 			userPosix.Gecos = posixConfig["gecos"].(string)
 		}
 		if posixConfig["gid"] != 0 {
-			log.Printf("[DEBUG] Setting posix %d gid: %v", i, uint64(posixConfig["gid"].(int)))
+			log.Printf("[DEBUG] Setting posix %d gid: %d", i, uint64(posixConfig["gid"].(int)))
 			userPosix.Gid = uint64(posixConfig["gid"].(int))
 		}
 		if posixConfig["home_directory"] != "" {
@@ -369,7 +369,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 			userPosix.Primary = posixConfig["primary"].(bool)
 		}
 		if posixConfig["uid"] != 0 {
-			log.Printf("[DEBUG] Setting posix %d uid: %v", i, uint64(posixConfig["uid"].(int)))
+			log.Printf("[DEBUG] Setting posix %d uid: %d", i, uint64(posixConfig["uid"].(int)))
 			userPosix.Uid = uint64(posixConfig["uid"].(int))
 		}
 		if posixConfig["username"] != "" {
@@ -535,7 +535,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 				userPosix.Gecos = posixConfig["gecos"].(string)
 			}
 			if posixConfig["gid"] != 0 {
-				log.Printf("[DEBUG] Setting posix %d gid: %v", i, uint64(posixConfig["gid"].(int)))
+				log.Printf("[DEBUG] Setting posix %d gid: %d", i, uint64(posixConfig["gid"].(int)))
 				userPosix.Gid = uint64(posixConfig["gid"].(int))
 			}
 			if posixConfig["home_directory"] != "" {
@@ -555,7 +555,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 				userPosix.Primary = posixConfig["primary"].(bool)
 			}
 			if posixConfig["uid"] != 0 {
-				log.Printf("[DEBUG] Setting posix %d uid: %v", i, uint64(posixConfig["uid"].(int)))
+				log.Printf("[DEBUG] Setting posix %d uid: %d", i, uint64(posixConfig["uid"].(int)))
 				userPosix.Uid = uint64(posixConfig["uid"].(int))
 			}
 			if posixConfig["username"] != "" {
