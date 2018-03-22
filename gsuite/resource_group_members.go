@@ -20,9 +20,10 @@ func resourceGroupMembers() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"group": {
+			"group_email": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"member": {
 				Type:     schema.TypeSet,
@@ -38,13 +39,15 @@ func resourceGroupMembers() *schema.Resource {
 func resourceGroupMembersRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	members, err := getApiMembers(d.Id(), config)
+	groupEmail := d.Id()
+
+	members, err := getApiMembers(groupEmail, config)
 
 	if err != nil {
 		return err
 	}
 
-	d.Set("group", d.Id())
+	d.Set("group_email", groupEmail)
 	d.Set("member", membersToCfg(members))
 	return nil
 }
@@ -115,24 +118,24 @@ func resourceMembers(d *schema.ResourceData) (members []map[string]interface{}) 
 
 func createOrUpdateGroupMembers(d *schema.ResourceData, meta interface{}) (string, error) {
 	config := meta.(*Config)
-	gid := d.Get("group").(string)
+	groupEmail := d.Get("group_email").(string)
 
 	// Get members from config
 	cfgMembers := resourceMembers(d)
 
 	// Get members from API
-	apiMembers, err := getApiMembers(gid, config)
+	apiMembers, err := getApiMembers(groupEmail, config)
 	if err != nil {
-		return gid, fmt.Errorf("Error updating memberships: %v", err)
+		return groupEmail, fmt.Errorf("Error updating memberships: %v", err)
 	}
 	// This call removes any members that aren't defined in cfgMembers,
 	// and adds all of those that are
-	err = reconcileMembers(d, cfgMembers, membersToCfg(apiMembers), config, gid)
+	err = reconcileMembers(d, cfgMembers, membersToCfg(apiMembers), config, groupEmail)
 	if err != nil {
-		return gid, fmt.Errorf("Error updating memberships: %v", err)
+		return groupEmail, fmt.Errorf("Error updating memberships: %v", err)
 	}
 
-	return gid, nil
+	return groupEmail, nil
 }
 
 // This function ensures that the members of a group exactly match that
@@ -180,7 +183,7 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 				var err error
 				err = retry(func() error {
 					updatedGroupMember, err = config.directory.Members.Patch(
-						d.Get("group").(string),
+						d.Get("group_email").(string),
 						cfgMember["email"].(string),
 						groupMember).Do()
 					return err
@@ -209,7 +212,7 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 }
 
 // Retrieve a group's members from the API
-func getApiMembers(gid string, config *Config) ([]*directory.Member, error) {
+func getApiMembers(groupEmail string, config *Config) ([]*directory.Member, error) {
 	// Get members from the API
 	groupMembers := make([]*directory.Member, 0)
 	token := ""
@@ -218,7 +221,7 @@ func getApiMembers(gid string, config *Config) ([]*directory.Member, error) {
 	for paginate := true; paginate; {
 
 		err = retry(func() error {
-			membersResponse, err = config.directory.Members.List(gid).PageToken(token).Do()
+			membersResponse, err = config.directory.Members.List(groupEmail).PageToken(token).Do()
 			return err
 		})
 
@@ -234,7 +237,7 @@ func getApiMembers(gid string, config *Config) ([]*directory.Member, error) {
 	return groupMembers, nil
 }
 
-func upsertMember(email, gid, role string, config *Config) error {
+func upsertMember(email, groupEmail, role string, config *Config) error {
 	groupMember := &directory.Member{
 		Role:  role,
 		Email: email,
@@ -263,7 +266,7 @@ func upsertMember(email, gid, role string, config *Config) error {
 		var currentMember *directory.Member
 		var err error
 		err = retry(func() error {
-			currentMember, err = config.directory.Members.Get(gid, email).Do()
+			currentMember, err = config.directory.Members.Get(groupEmail, email).Do()
 			return err
 		})
 
@@ -271,7 +274,7 @@ func upsertMember(email, gid, role string, config *Config) error {
 		if err != nil {
 			var createdGroupMember *directory.Member
 			err = retry(func() error {
-				createdGroupMember, err = config.directory.Members.Insert(gid, groupMember).Do()
+				createdGroupMember, err = config.directory.Members.Insert(groupEmail, groupMember).Do()
 				return err
 			})
 			if err != nil {
@@ -281,7 +284,7 @@ func upsertMember(email, gid, role string, config *Config) error {
 		} else {
 			var updatedGroupMember *directory.Member
 			err = retry(func() error {
-				updatedGroupMember, err = config.directory.Members.Update(gid, email, groupMember).Do()
+				updatedGroupMember, err = config.directory.Members.Update(groupEmail, email, groupMember).Do()
 				return err
 			})
 			if err != nil {
@@ -297,7 +300,7 @@ func upsertMember(email, gid, role string, config *Config) error {
 		var hasMemberResponse *directory.MembersHasMember
 		var err error
 		err = retry(func() error {
-			hasMemberResponse, err = config.directory.Members.HasMember(gid, email).Do()
+			hasMemberResponse, err = config.directory.Members.HasMember(groupEmail, email).Do()
 			if err == nil {
 				return err
 			}
@@ -316,7 +319,7 @@ func upsertMember(email, gid, role string, config *Config) error {
 		if hasMemberResponse.IsMember == true {
 			var updatedGroupMember *directory.Member
 			err = retry(func() error {
-				updatedGroupMember, err = config.directory.Members.Update(gid, email, groupMember).Do()
+				updatedGroupMember, err = config.directory.Members.Update(groupEmail, email, groupMember).Do()
 				return err
 			})
 			if err != nil {
@@ -326,7 +329,7 @@ func upsertMember(email, gid, role string, config *Config) error {
 		} else {
 			var createdGroupMember *directory.Member
 			err = retry(func() error {
-				createdGroupMember, err = config.directory.Members.Insert(gid, groupMember).Do()
+				createdGroupMember, err = config.directory.Members.Insert(groupEmail, groupMember).Do()
 				return err
 			})
 			if err != nil {
@@ -339,9 +342,9 @@ func upsertMember(email, gid, role string, config *Config) error {
 	return nil
 }
 
-func deleteMember(email, gid string, config *Config) (err error) {
+func deleteMember(email, groupEmail string, config *Config) (err error) {
 	err = retry(func() error {
-		err = config.directory.Members.Delete(gid, email).Do()
+		err = config.directory.Members.Delete(groupEmail, email).Do()
 		return err
 	})
 
@@ -363,10 +366,10 @@ func resourceGroupMembersImporter(d *schema.ResourceData, meta interface{}) ([]*
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Error fetching group id. Make sure the group exists: %s ", err)
+		return nil, fmt.Errorf("Error fetching group. Make sure the group exists: %s ", err)
 	}
 
-	d.SetId(group.Id)
+	d.SetId(group.Email)
 
 	return []*schema.ResourceData{d}, nil
 }
