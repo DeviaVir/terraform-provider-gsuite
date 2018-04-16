@@ -15,6 +15,9 @@ func resourceGroup() *schema.Resource {
 		Read:   resourceGroupRead,
 		Update: resourceGroupUpdate,
 		Delete: resourceGroupDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceGroupImporter,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"email": &schema.Schema{
@@ -179,4 +182,22 @@ func resourceGroupDelete(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId("")
 	return nil
+}
+
+// Allow importing using any key (id, email, alias)
+func resourceGroupImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(*Config)
+
+	id, err := config.directory.Groups.Get(d.Id()).Do()
+
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching group. Make sure the group exists: %s ", err)
+	}
+
+	d.SetId(id.Id)
+	d.Set("email", id.Email)
+	d.Set("description", id.Description)
+	d.Set("name", id.Name)
+
+	return []*schema.ResourceData{d}, nil
 }

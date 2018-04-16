@@ -3,6 +3,7 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 
@@ -57,6 +58,9 @@ func resourceGroupMember() *schema.Resource {
 		Read:   resourceGroupMemberRead,
 		Update: resourceGroupMemberUpdate,
 		Delete: resourceGroupMemberDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceGroupMemberImporter,
+		},
 
 		Schema: schemaMembership,
 	}
@@ -156,4 +160,36 @@ func resourceGroupMemberDelete(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId("")
 	return nil
+}
+
+// Allow importing using [group]{:,/}[email]
+func resourceGroupMemberImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(*Config)
+
+	s := strings.Split(d.Id(), ":")
+	if len(s) < 2 {
+		s = strings.Split(d.Id(), "/")
+	}
+
+	if len(s) < 2 {
+		return nil, fmt.Errorf("Import via [group]:[member email] or [group]/[member email]!")
+	}
+	group, member := s[0], s[1]
+
+	id, err := config.directory.Members.Get(group, member).Do()
+
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching member. Make sure the member exists: %s ", err)
+	}
+
+	d.SetId(id.Id)
+	d.Set("group", group)
+	d.Set("role", id.Role)
+	d.Set("email", id.Email)
+	d.Set("etag", id.Etag)
+	d.Set("kind", id.Kind)
+	d.Set("status", id.Status)
+	d.Set("type", id.Type)
+
+	return []*schema.ResourceData{d}, nil
 }

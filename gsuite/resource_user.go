@@ -76,6 +76,9 @@ func resourceUser() *schema.Resource {
 		Read:   resourceUserRead,
 		Update: resourceUserUpdate,
 		Delete: resourceUserDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceUserImporter,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"aliases": &schema.Schema{
@@ -651,4 +654,43 @@ func resourceUserDelete(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId("")
 	return nil
+}
+
+// Allow importing using any key (id, email, alias)
+func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(*Config)
+
+	id, err := config.directory.Users.Get(d.Id()).Do()
+
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching user. Make sure the user exists: %s ", err)
+	}
+
+	d.SetId(id.Id)
+	d.Set("deletion_time", id.DeletionTime)
+	d.Set("primary_email", id.PrimaryEmail)
+	d.Set("password", id.Password)
+	d.Set("hash_function", id.HashFunction)
+	d.Set("suspension_reason", id.SuspensionReason)
+	d.Set("change_password_next_login", id.ChangePasswordAtNextLogin)
+	d.Set("include_in_global_list", id.IncludeInGlobalAddressList)
+	d.Set("is_ip_whitelisted", id.IpWhitelisted)
+	d.Set("is_admin", id.IsAdmin)
+	d.Set("is_delegated_admin", id.IsDelegatedAdmin)
+	d.Set("is_suspended", id.Suspended)
+	d.Set("2s_enrolled", id.IsEnrolledIn2Sv)
+	d.Set("2s_enforced", id.IsEnforcedIn2Sv)
+	d.Set("aliases", id.Aliases)
+	d.Set("agreed_to_terms", id.AgreedToTerms)
+	d.Set("creation_time", id.CreationTime)
+	d.Set("customer_id", id.CustomerId)
+	d.Set("etag", id.Etag)
+	d.Set("last_login_time", id.LastLoginTime)
+	d.Set("is_mailbox_setup", id.IsMailboxSetup)
+
+	d.Set("name", flattenUserName(id.Name))
+	d.Set("posix_accounts", id.PosixAccounts)
+	d.Set("ssh_public_keys", id.SshPublicKeys)
+
+	return []*schema.ResourceData{d}, nil
 }
