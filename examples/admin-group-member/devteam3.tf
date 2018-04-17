@@ -37,7 +37,7 @@ resource "gsuite_user" "developer3" {
 }
 
 resource "gsuite_group_member" "developer3" {
-  group = "${gsuite_group.devteam3.id}"
+  group = "${gsuite_group.devteam3.email}"
   email = "${gsuite_user.developer3.primary_email}"
   role = "MEMBER" # OWNER/MANAGER/MEMBER
 }
