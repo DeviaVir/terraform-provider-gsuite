@@ -68,7 +68,7 @@ define make-xc-target
 				GOARCH="${2}" \
 				go build \
 				  -a \
-					-o="pkg/${1}_${2}/${NAME}${3}" \
+					-o="pkg/${1}_${2}/${NAME}_v${VERSION}${3}" \
 					-ldflags "${LD_FLAGS}" \
 					-tags "${GOTAGS}"
   endif
@@ -135,8 +135,8 @@ _compress:
 			ext=".exe"; \
 		fi; \
 		cd "$$platform"; \
-		tar -czf "${CURRENT_DIR}/pkg/dist/${NAME}_${VERSION}_$${osarch}.tgz" "${NAME}$${ext}"; \
-		zip -q "${CURRENT_DIR}/pkg/dist/${NAME}_${VERSION}_$${osarch}.zip" "${NAME}$${ext}"; \
+		tar -czf "${CURRENT_DIR}/pkg/dist/${NAME}_${VERSION}_$${osarch}.tgz" "${NAME}_v${VERSION}$${ext}"; \
+		zip -q "${CURRENT_DIR}/pkg/dist/${NAME}_${VERSION}_$${osarch}.zip" "${NAME}_v${VERSION}$${ext}"; \
 		cd - &>/dev/null; \
 	done
 .PHONY: _compress
