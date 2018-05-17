@@ -40,6 +40,7 @@ var schemaMember = map[string]*schema.Schema{
 	"email": &schema.Schema{
 		Type:     schema.TypeString,
 		Required: true,
+		ForceNew: true,
 	},
 }
 
