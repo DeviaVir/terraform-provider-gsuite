@@ -4,9 +4,9 @@
   version = "0.8.0"
 
 [[constraint]]
-  branch = "master"
   name = "golang.org/x/oauth2"
+  revision = "a032972e28060ca4f5644acffae3dfc268cc09db"
 
 [[constraint]]
-  branch = "master"
   name = "google.golang.org/api"
+  revision = "4c1b07210d562506ab52117997c3b7e294627ac9"
