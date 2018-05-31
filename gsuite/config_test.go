@@ -9,7 +9,7 @@ const testFakeCredentialsPath = "./test-fixtures/fake_account.json"
 
 func TestConfigLoadAndValidate_accountFilePath(t *testing.T) {
 	config := Config{
-		Credentials: testFakeCredentialsPath,
+		Credentials:           testFakeCredentialsPath,
 		ImpersonatedUserEmail: "xxx@xxx.xom",
 	}
 
@@ -25,7 +25,7 @@ func TestConfigLoadAndValidate_accountFileJSON(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 	config := Config{
-		Credentials: string(contents),
+		Credentials:           string(contents),
 		ImpersonatedUserEmail: "xxx@xxx.xom",
 	}
 
@@ -48,7 +48,7 @@ func TestConfigLoadAndValidate_accountFileJSONInvalid(t *testing.T) {
 func TestConfigLoadAndValidate_noImpersonatedEmail(t *testing.T) {
 	// ImpersonatedUserEmail empty string when credentials set
 	config := Config{
-		Credentials: testFakeCredentialsPath,
+		Credentials:           testFakeCredentialsPath,
 		ImpersonatedUserEmail: "",
 	}
 

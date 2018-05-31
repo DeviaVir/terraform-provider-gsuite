@@ -73,7 +73,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	group := d.Get("group").(string)
 
 	groupMember := &directory.Member{
-		Role: d.Get("role").(string),
+		Role:  d.Get("role").(string),
 		Email: d.Get("email").(string),
 	}
 
@@ -88,7 +88,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error creating group member: %s", err)
 	}
 
-  d.SetId(createdGroupMember.Id)
+	d.SetId(createdGroupMember.Id)
 	log.Printf("[INFO] Created group: %s", createdGroupMember.Email)
 	return resourceGroupMemberRead(d, meta)
 }
@@ -137,7 +137,7 @@ func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 		return handleNotFoundError(err, d, fmt.Sprintf("Group member %q", d.Get("name").(string)))
 	}
 
-  d.SetId(groupMember.Id)
+	d.SetId(groupMember.Id)
 	d.Set("email", groupMember.Email)
 	d.Set("etag", groupMember.Etag)
 	d.Set("kind", groupMember.Kind)

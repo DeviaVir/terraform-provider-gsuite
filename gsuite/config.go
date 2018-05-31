@@ -6,27 +6,21 @@ import (
 	"log"
 	"runtime"
 
+	"encoding/json"
 	"github.com/hashicorp/terraform/helper/logging"
+	"github.com/hashicorp/terraform/helper/pathorcontents"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/google"
-	directory "google.golang.org/api/admin/directory/v1"
-	"github.com/hashicorp/terraform/helper/pathorcontents"
 	"golang.org/x/oauth2/jwt"
+	directory "google.golang.org/api/admin/directory/v1"
 	"net/http"
 	"strings"
-	"encoding/json"
 )
 
 var defaultOauthScopes = []string{
-	directory.AdminDirectoryCustomerScope,
 	directory.AdminDirectoryGroupScope,
-	directory.AdminDirectoryGroupMemberScope,
-	directory.AdminDirectoryOrgunitScope,
 	directory.AdminDirectoryUserScope,
-	directory.AdminDirectoryUserAliasScope,
-	directory.AdminDirectoryUserSecurityScope,
-	directory.AdminDirectoryUserschemaScope,
 }
 
 // Config is the structure used to instantiate the GSuite provider.
@@ -48,8 +42,6 @@ func (c *Config) loadAndValidate() error {
 	var account accountFile
 
 	oauthScopes := c.OauthScopes
-
-
 
 	var client *http.Client
 	if c.Credentials != "" {

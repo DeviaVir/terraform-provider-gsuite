@@ -10,33 +10,33 @@ import (
 )
 
 var googleLookup = map[string]string{
-	"aliases": "Aliases",
-	"agreed_to_terms": "AgreedToTerms",
+	"aliases":                    "Aliases",
+	"agreed_to_terms":            "AgreedToTerms",
 	"change_password_next_login": "ChangePasswordAtNextLogin",
-	"creation_time": "CreationTime",
-	"customer_id": "CustomerId",
-	"deletion_time": "DeletionTime",
-	"etag": "Etag",
+	"creation_time":              "CreationTime",
+	"customer_id":                "CustomerId",
+	"deletion_time":              "DeletionTime",
+	"etag":                       "Etag",
 	"include_in_global_list": "IncludeInGlobalAddressList",
-	"is_ip_whitelisted": "IpWhitelisted",
-	"is_admin": "IsAdmin",
-	"is_delegated_admin": "IsDelegatedAdmin",
-	"2s_enforced": "IsEnforcedIn2Sv",
-	"2s_enrolled": "IsEnrolledIn2Sv",
-	"is_mailbox_setup": "IsMailboxSetup",
-	"last_login_time": "LastLoginTime",
-	"password": "Password",
-	"hash_function": "HashFunction",
-	"primary_email": "PrimaryEmail",
-	"is_suspended": "Suspended",
-	"suspension_reason": "SuspensionReason",
+	"is_ip_whitelisted":      "IpWhitelisted",
+	"is_admin":               "IsAdmin",
+	"is_delegated_admin":     "IsDelegatedAdmin",
+	"2s_enforced":            "IsEnforcedIn2Sv",
+	"2s_enrolled":            "IsEnrolledIn2Sv",
+	"is_mailbox_setup":       "IsMailboxSetup",
+	"last_login_time":        "LastLoginTime",
+	"password":               "Password",
+	"hash_function":          "HashFunction",
+	"primary_email":          "PrimaryEmail",
+	"is_suspended":           "Suspended",
+	"suspension_reason":      "SuspensionReason",
 }
 
 func flattenUserName(name *directory.UserName) map[string]interface{} {
 	return map[string]interface{}{
 		"family_name": name.FamilyName,
-		"full_name": name.FullName,
-		"given_name": name.GivenName,
+		"full_name":   name.FullName,
+		"given_name":  name.GivenName,
 	}
 }
 
@@ -44,15 +44,15 @@ func flattenUserPosixAccounts(posixAccounts []*directory.UserPosixAccount) []map
 	result := make([]map[string]interface{}, len(posixAccounts))
 	for i, posixAccount := range posixAccounts {
 		result[i] = map[string]interface{}{
-			"account_id": posixAccount.AccountId,
-			"gecos": posixAccount.Gecos,
-			"gid": posixAccount.Gid,
+			"account_id":     posixAccount.AccountId,
+			"gecos":          posixAccount.Gecos,
+			"gid":            posixAccount.Gid,
 			"home_directory": posixAccount.HomeDirectory,
-			"system_id": posixAccount.SystemId,
-			"primary": posixAccount.Primary,
-			"shell": posixAccount.Shell,
-			"uid": posixAccount.Uid,
-			"username": posixAccount.Username,
+			"system_id":      posixAccount.SystemId,
+			"primary":        posixAccount.Primary,
+			"shell":          posixAccount.Shell,
+			"uid":            posixAccount.Uid,
+			"username":       posixAccount.Username,
 		}
 	}
 	return result
@@ -63,7 +63,7 @@ func flattenUserSshPublicKeys(sshPublicKeys []*directory.UserSshPublicKey) []map
 	for i, sshPublicKey := range sshPublicKeys {
 		result[i] = map[string]interface{}{
 			"expiration_time_usec": sshPublicKey.ExpirationTimeUsec,
-			"key": sshPublicKey.Key,
+			"key":         sshPublicKey.Key,
 			"fingerprint": sshPublicKey.Fingerprint,
 		}
 	}
@@ -95,7 +95,7 @@ func resourceUser() *schema.Resource {
 			"change_password_next_login": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default: false,
+				Default:  false,
 			},
 
 			"creation_time": &schema.Schema{
@@ -121,13 +121,13 @@ func resourceUser() *schema.Resource {
 			"include_in_global_list": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default: true,
+				Default:  true,
 			},
 
 			"is_ip_whitelisted": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default: false,
+				Default:  false,
 			},
 
 			"is_admin": &schema.Schema{
@@ -267,7 +267,7 @@ func resourceUser() *schema.Resource {
 			"is_suspended": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default: false,
+				Default:  false,
 			},
 
 			"suspension_reason": &schema.Schema{
@@ -303,7 +303,6 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[DEBUG] Setting %s: %s", "suspension_reason", v.(string))
 		user.SuspensionReason = v.(string)
 	}
-
 
 	if v, ok := d.GetOk("change_password_next_login"); ok {
 		log.Printf("[DEBUG] Setting %s: %t", "change_password_next_login", v.(bool))
@@ -387,7 +386,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	userNamePrefix := "name.0"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
-		GivenName: d.Get(userNamePrefix + ".given_name").(string),
+		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
 	}
 	user.Name = userName
 
@@ -402,7 +401,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error creating user: %s", err)
 	}
 
-  d.SetId(createdUser.Id)
+	d.SetId(createdUser.Id)
 	log.Printf("[INFO] Created user: %s", createdUser.PrimaryEmail)
 	return resourceUserRead(d, meta)
 }
@@ -574,7 +573,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	userNamePrefix := "name.0"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
-		GivenName: d.Get(userNamePrefix + ".given_name").(string),
+		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
 	}
 	user.Name = userName
 
