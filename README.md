@@ -10,12 +10,8 @@ user interaction, whereas a service account could be used in an automated
 workflow.
 
 See the necessary oauth scopes both for service accounts and users below:
-- https://www.googleapis.com/auth/admin.directory.customer
 - https://www.googleapis.com/auth/admin.directory.group
-- https://www.googleapis.com/auth/admin.directory.orgunit
 - https://www.googleapis.com/auth/admin.directory.user
-- https://www.googleapis.com/auth/admin.directory.userschema
-- https://www.googleapis.com/auth/userinfo.email
 
 You could also provide the minimal set of scopes using the
 `oauth_scopes` variable in the provider configuration.
@@ -23,7 +19,8 @@ You could also provide the minimal set of scopes using the
 ```
 provider "gsuite" {
   oauth_scopes = [
-    "https://www.googleapis.com/auth/admin.directory.group"
+    "https://www.googleapis.com/auth/admin.directory.group",
+    "https://www.googleapis.com/auth/admin.directory.user"
   ]
 }
 ```
@@ -68,12 +65,8 @@ You can now use that credential to authenticate:
 $ gcloud auth application-default login \
   --client-id-file=client_id.json \
   --scopes \
-https://www.googleapis.com/auth/admin.directory.customer,\
 https://www.googleapis.com/auth/admin.directory.group,\
-https://www.googleapis.com/auth/admin.directory.orgunit,\
-https://www.googleapis.com/auth/admin.directory.user,\
-https://www.googleapis.com/auth/admin.directory.userschema,\
-https://www.googleapis.com/auth/userinfo.email
+https://www.googleapis.com/auth/admin.directory.user,
 ```
 
 Now that you have a credential that is allowed to the Admin SDK, you can use the
