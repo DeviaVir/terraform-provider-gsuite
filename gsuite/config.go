@@ -20,6 +20,7 @@ import (
 
 var defaultOauthScopes = []string{
 	directory.AdminDirectoryGroupScope,
+	directory.AdminDirectoryUserScope,
 }
 
 // Config is the structure used to instantiate the GSuite provider.
