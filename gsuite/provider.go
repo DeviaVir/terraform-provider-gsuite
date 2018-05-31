@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"os"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/pkg/errors"
 	"log"
+	"os"
 )
 
 var (
@@ -42,9 +42,9 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"gsuite_group": resourceGroup(),
-			"gsuite_user": resourceUser(),
-			"gsuite_group_member": resourceGroupMember(),
+			"gsuite_group":         resourceGroup(),
+			"gsuite_user":          resourceUser(),
+			"gsuite_group_member":  resourceGroupMember(),
 			"gsuite_group_members": resourceGroupMembers(),
 		},
 		ConfigureFunc: providerConfigure,
@@ -65,9 +65,9 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	impersonatedUserEmail := d.Get("impersonated_user_email").(string)
 	oauthScopes := oauthScopesFromConfigOrDefault(d.Get("oauth_scopes").(*schema.Set))
 	config := Config{
-		Credentials: credentials,
+		Credentials:           credentials,
 		ImpersonatedUserEmail: impersonatedUserEmail,
-		OauthScopes: oauthScopes,
+		OauthScopes:           oauthScopes,
 	}
 
 	if err := config.loadAndValidate(); err != nil {

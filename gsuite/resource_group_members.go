@@ -11,10 +11,10 @@ import (
 
 func resourceGroupMembers() *schema.Resource {
 	return &schema.Resource{
-		Create:   resourceGroupMembersCreate,
-		Read:     resourceGroupMembersRead,
-		Update:   resourceGroupMembersUpdate,
-		Delete:   resourceGroupMembersDelete,
+		Create: resourceGroupMembersCreate,
+		Read:   resourceGroupMembersRead,
+		Update: resourceGroupMembersUpdate,
+		Delete: resourceGroupMembersDelete,
 		Importer: &schema.ResourceImporter{
 			State: resourceGroupMembersImporter,
 		},

@@ -88,7 +88,7 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error creating group: %s", err)
 	}
 
-  d.SetId(createdGroup.Id)
+	d.SetId(createdGroup.Id)
 	log.Printf("[INFO] Created group: %s", createdGroup.Email)
 	return resourceGroupRead(d, meta)
 }
@@ -159,7 +159,7 @@ func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 		return handleNotFoundError(err, d, fmt.Sprintf("Group %q", d.Get("name").(string)))
 	}
 
-  d.SetId(group.Id)
+	d.SetId(group.Id)
 	d.Set("direct_members_count", group.DirectMembersCount)
 	d.Set("admin_created", group.AdminCreated)
 	d.Set("aliases", group.Aliases)
