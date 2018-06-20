@@ -313,7 +313,7 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("Error checking hasmember: %s, %s", err, email)
+			return createGroupMember(groupMember, groupEmail, config)
 		}
 
 		if hasMemberResponse.IsMember == true {
@@ -327,17 +327,23 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 			}
 			log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
 		} else {
-			var createdGroupMember *directory.Member
-			err = retry(func() error {
-				createdGroupMember, err = config.directory.Members.Insert(groupEmail, groupMember).Do()
-				return err
-			})
-			if err != nil {
-				return fmt.Errorf("Error creating groupMember: %s, %s", err, email)
-			}
-			log.Printf("[INFO] Created groupMember: %s", createdGroupMember.Email)
+			return createGroupMember(groupMember, groupEmail, config)
 		}
 	}
+
+	return nil
+}
+
+func createGroupMember(groupMember *directory.Member, groupEmail string, config *Config) (err error) {
+	var createdGroupMember *directory.Member
+	err = retry(func() error {
+		createdGroupMember, err = config.directory.Members.Insert(groupEmail, groupMember).Do()
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("Error creating groupMember: %s, %s", err, groupMember.Email)
+	}
+	log.Printf("[INFO] Created groupMember: %s", createdGroupMember.Email)
 
 	return nil
 }
