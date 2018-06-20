@@ -313,7 +313,7 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("Error checking hasmember: %s, %s", err, email)
+			//return fmt.Errorf("Error checking hasmember: %s, %s", err, email)
 		}
 
 		if hasMemberResponse.IsMember == true {
