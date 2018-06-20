@@ -134,7 +134,7 @@ func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("Group member %q", d.Get("name").(string)))
+		return handleNotFoundError(err, d, fmt.Sprintf("Group member %q", d.Get("email").(string)))
 	}
 
 	d.SetId(groupMember.Id)
