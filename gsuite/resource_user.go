@@ -3,6 +3,7 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 
@@ -289,7 +290,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	if v, ok := d.GetOk("primary_email"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "primary_email", v.(string))
-		user.PrimaryEmail = v.(string)
+		user.PrimaryEmail = strings.ToLower(v.(string))
 	}
 	if v, ok := d.GetOk("password"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "password", v.(string))

@@ -73,8 +73,8 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	group := d.Get("group").(string)
 
 	groupMember := &directory.Member{
-		Role:  d.Get("role").(string),
-		Email: d.Get("email").(string),
+		Role:  strings.ToUpper(d.Get("role").(string)),
+		Email: strings.ToLower(d.Get("email").(string)),
 	}
 
 	var createdGroupMember *directory.Member
@@ -101,7 +101,7 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if d.HasChange("email") {
 		log.Printf("[DEBUG] Updating groupMember email: %s", d.Get("email").(string))
-		groupMember.Email = d.Get("email").(string)
+		groupMember.Email = strings.ToLower(d.Get("email").(string))
 	}
 
 	if len(nullFields) > 0 {
@@ -111,7 +111,7 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 	var updatedGroupMember *directory.Member
 	var err error
 	err = retry(func() error {
-		updatedGroupMember, err = config.directory.Members.Patch(d.Get("group").(string), d.Id(), groupMember).Do()
+		updatedGroupMember, err = config.directory.Members.Patch(strings.ToLower(d.Get("group").(string)), d.Id(), groupMember).Do()
 		return err
 	})
 
@@ -129,7 +129,7 @@ func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 	var groupMember *directory.Member
 	var err error
 	err = retry(func() error {
-		groupMember, err = config.directory.Members.Get(d.Get("group").(string), d.Id()).Do()
+		groupMember, err = config.directory.Members.Get(strings.ToLower(d.Get("group").(string)), d.Id()).Do()
 		return err
 	})
 
@@ -138,7 +138,7 @@ func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(groupMember.Id)
-	d.Set("email", groupMember.Email)
+	d.Set("email", strings.ToLower(groupMember.Email))
 	d.Set("etag", groupMember.Etag)
 	d.Set("kind", groupMember.Kind)
 	d.Set("status", groupMember.Status)
@@ -152,7 +152,7 @@ func resourceGroupMemberDelete(d *schema.ResourceData, meta interface{}) error {
 
 	var err error
 	err = retry(func() error {
-		err = config.directory.Members.Delete(d.Get("group").(string), d.Id()).Do()
+		err = config.directory.Members.Delete(strings.ToLower(d.Get("group").(string)), d.Id()).Do()
 		return err
 	})
 	if err != nil {
@@ -175,7 +175,7 @@ func resourceGroupMemberImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	if len(s) < 2 {
 		return nil, fmt.Errorf("Import via [group]:[member email] or [group]/[member email]!")
 	}
-	group, member := s[0], s[1]
+	group, member := strings.ToLower(s[0]), strings.ToLower(s[1])
 
 	id, err := config.directory.Members.Get(group, member).Do()
 

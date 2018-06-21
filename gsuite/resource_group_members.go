@@ -3,6 +3,7 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	directory "google.golang.org/api/admin/directory/v1"
@@ -47,7 +48,7 @@ func resourceGroupMembersRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.Set("group_email", groupEmail)
+	d.Set("group_email", strings.ToLower(groupEmail))
 	d.Set("member", membersToCfg(members))
 	return nil
 }
@@ -118,7 +119,7 @@ func resourceMembers(d *schema.ResourceData) (members []map[string]interface{}) 
 
 func createOrUpdateGroupMembers(d *schema.ResourceData, meta interface{}) (string, error) {
 	config := meta.(*Config)
-	groupEmail := d.Get("group_email").(string)
+	groupEmail := strings.ToLower(d.Get("group_email").(string))
 
 	// Get members from config
 	cfgMembers := resourceMembers(d)
@@ -168,8 +169,8 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 		} else {
 			// The member exists in the config and the API
 			// If role has changed update, otherwise do nothing
-			cfgRole = cfgMember["role"].(string)
-			apiRole = apiMember["role"].(string)
+			cfgRole = strings.ToUpper(cfgMember["role"].(string))
+			apiRole = strings.ToUpper(apiMember["role"].(string))
 			if cfgRole != apiRole {
 				groupMember := &directory.Member{
 					Role: cfgRole,
@@ -183,8 +184,8 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 				var err error
 				err = retry(func() error {
 					updatedGroupMember, err = config.directory.Members.Patch(
-						d.Get("group_email").(string),
-						cfgMember["email"].(string),
+						strings.ToLower(d.Get("group_email").(string)),
+						strings.ToLower(cfgMember["email"].(string)),
 						groupMember).Do()
 					return err
 				})
@@ -239,8 +240,8 @@ func getApiMembers(groupEmail string, config *Config) ([]*directory.Member, erro
 
 func upsertMember(email, groupEmail, role string, config *Config) error {
 	groupMember := &directory.Member{
-		Role:  role,
-		Email: email,
+		Role:  strings.ToUpper(role),
+		Email: strings.ToLower(email),
 	}
 
 	// Check if the email address belongs to a user, or to a group
@@ -367,7 +368,7 @@ func resourceGroupMembersImporter(d *schema.ResourceData, meta interface{}) ([]*
 	var group *directory.Group
 	var err error
 	err = retry(func() error {
-		group, err = config.directory.Groups.Get(d.Id()).Do()
+		group, err = config.directory.Groups.Get(strings.ToLower(d.Id())).Do()
 		return err
 	})
 
