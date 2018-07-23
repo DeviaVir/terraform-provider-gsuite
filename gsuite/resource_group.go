@@ -3,6 +3,7 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 
@@ -64,7 +65,7 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	group := &directory.Group{
-		Email: d.Get("email").(string),
+		Email: strings.ToLower(d.Get("email").(string)),
 	}
 
 	if v, ok := d.GetOk("name"); ok {
@@ -101,7 +102,7 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if d.HasChange("email") {
 		log.Printf("[DEBUG] Updating group email: %s", d.Get("email").(string))
-		group.Email = d.Get("email").(string)
+		group.Email = strings.ToLower(d.Get("email").(string))
 	}
 
 	if d.HasChange("name") {
