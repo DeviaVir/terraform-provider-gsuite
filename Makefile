@@ -19,7 +19,7 @@ GOVERSION := 1.9.3
 PROJECT := $(CURRENT_DIR:$(GOPATH)/src/%=%)
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
 NAME := $(notdir $(PROJECT))
-VERSION := 0.1.9-dev171020181110
+VERSION := 0.1.9-dev171020181300
 EXTERNAL_TOOLS = \
 	github.com/golang/dep/cmd/dep
 
@@ -114,6 +114,18 @@ else
 	@$(MAKE) -f "${MKFILE_PATH}" _compress _checksum _sign
 endif
 .PHONY: dist
+
+# sign in case you were unable to sign during dist
+sign:
+ifndef GPG_KEY
+	@echo "==> ERROR: No GPG key specified! Without a GPG key, this release cannot"
+	@echo "           be signed. Set the environment variable GPG_KEY to the ID of"
+	@echo "           the GPG key to continue."
+	@exit 127
+else
+	@$(MAKE) -f "${MKFILE_PATH}" _compress _checksum _sign
+endif
+.PHONY: sign
 
 # _cleanup removes any previous binaries
 _cleanup:
