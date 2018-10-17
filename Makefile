@@ -19,7 +19,7 @@ GOVERSION := 1.9.3
 PROJECT := $(CURRENT_DIR:$(GOPATH)/src/%=%)
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
 NAME := $(notdir $(PROJECT))
-VERSION := 0.1.8
+VERSION := 0.1.9-dev171020181110
 EXTERNAL_TOOLS = \
 	github.com/golang/dep/cmd/dep
 
@@ -28,9 +28,8 @@ GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 
 # Default os-arch combination to build
-XC_OS ?= linux darwin freebsd openbsd solaris windows
-XC_ARCH ?= amd64 386 arm
-XC_EXCLUDE ?= darwin/386 darwin/arm solaris/386 solaris/arm windows/arm
+XC_OS ?= linux darwin
+XC_ARCH ?= amd64
 
 # GPG Signing key (blank by default, means no GPG signing)
 GPG_KEY ?=
