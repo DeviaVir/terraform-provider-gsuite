@@ -85,11 +85,11 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error creating group member: %s", err)
+		return fmt.Errorf("error creating group member: %s", err)
 	}
 
 	d.SetId(createdGroupMember.Id)
-	log.Printf("[INFO] Created group: %s", createdGroupMember.Email)
+	log.Printf("[INFO] Created group member: %s", createdGroupMember.Email)
 	return resourceGroupMemberRead(d, meta)
 }
 
@@ -100,8 +100,13 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 	nullFields := []string{}
 
 	if d.HasChange("email") {
-		log.Printf("[DEBUG] Updating groupMember email: %s", d.Get("email").(string))
+		log.Printf("[DEBUG] Updating groupMember email (recreating member): %s", d.Get("email").(string))
 		groupMember.Email = strings.ToLower(d.Get("email").(string))
+	}
+
+	if d.HasChange("role") {
+		log.Printf("[DEBUG] Updating groupMember role: %s to %s", d.Get("email").(string), d.Get("role").(string))
+		groupMember.Role = strings.ToUpper(d.Get("role").(string))
 	}
 
 	if len(nullFields) > 0 {
@@ -116,7 +121,7 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error updating group member: %s", err)
+		return fmt.Errorf("error updating group member: %s", err)
 	}
 
 	log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
@@ -138,6 +143,7 @@ func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(groupMember.Id)
+	d.Set("role", strings.ToUpper(groupMember.Role))
 	d.Set("email", strings.ToLower(groupMember.Email))
 	d.Set("etag", groupMember.Etag)
 	d.Set("kind", groupMember.Kind)
@@ -173,14 +179,14 @@ func resourceGroupMemberImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	}
 
 	if len(s) < 2 {
-		return nil, fmt.Errorf("Import via [group]:[member email] or [group]/[member email]!")
+		return nil, fmt.Errorf("import via [group]:[member email] or [group]/[member email]")
 	}
 	group, member := strings.ToLower(s[0]), strings.ToLower(s[1])
 
 	id, err := config.directory.Members.Get(group, member).Do()
 
 	if err != nil {
-		return nil, fmt.Errorf("Error fetching member. Make sure the member exists: %s ", err)
+		return nil, fmt.Errorf("error fetching member, make sure the member exists: %s ", err)
 	}
 
 	d.SetId(id.Id)

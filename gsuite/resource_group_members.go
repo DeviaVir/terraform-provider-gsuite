@@ -42,7 +42,7 @@ func resourceGroupMembersRead(d *schema.ResourceData, meta interface{}) error {
 
 	groupEmail := d.Id()
 
-	members, err := getApiMembers(groupEmail, config)
+	members, err := getAPIMembers(groupEmail, config)
 
 	if err != nil {
 		return err
@@ -79,8 +79,8 @@ func resourceGroupMembersDelete(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[DEBUG]: Deleting gsuite_group_members")
 	config := meta.(*Config)
 
-	for _, raw_member := range d.Get("member").(*schema.Set).List() {
-		member := raw_member.(map[string]interface{})
+	for _, rawMember := range d.Get("member").(*schema.Set).List() {
+		member := rawMember.(map[string]interface{})
 		deleteMember(member["email"].(string), d.Id(), config)
 	}
 
@@ -110,8 +110,8 @@ func membersToCfg(members []*directory.Member) []map[string]interface{} {
 }
 
 func resourceMembers(d *schema.ResourceData) (members []map[string]interface{}) {
-	for _, raw_member := range d.Get("member").(*schema.Set).List() {
-		member := raw_member.(map[string]interface{})
+	for _, rawMember := range d.Get("member").(*schema.Set).List() {
+		member := rawMember.(map[string]interface{})
 		members = append(members, member)
 	}
 	return members
@@ -125,7 +125,7 @@ func createOrUpdateGroupMembers(d *schema.ResourceData, meta interface{}) (strin
 	cfgMembers := resourceMembers(d)
 
 	// Get members from API
-	apiMembers, err := getApiMembers(groupEmail, config)
+	apiMembers, err := getAPIMembers(groupEmail, config)
 	if err != nil {
 		return groupEmail, fmt.Errorf("Error updating memberships: %v", err)
 	}
@@ -203,7 +203,7 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 	}
 
 	// Upsert memberships which are present in the config, but not in the api
-	for email, _ := range cfgMap {
+	for email := range cfgMap {
 		err := upsertMember(email, gid, cfgMap[email]["role"].(string), config)
 		if err != nil {
 			return err
@@ -213,7 +213,7 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 }
 
 // Retrieve a group's members from the API
-func getApiMembers(groupEmail string, config *Config) ([]*directory.Member, error) {
+func getAPIMembers(groupEmail string, config *Config) ([]*directory.Member, error) {
 	// Get members from the API
 	groupMembers := make([]*directory.Member, 0)
 	token := ""
@@ -239,6 +239,7 @@ func getApiMembers(groupEmail string, config *Config) ([]*directory.Member, erro
 }
 
 func upsertMember(email, groupEmail, role string, config *Config) error {
+	var err error
 	groupMember := &directory.Member{
 		Role:  strings.ToUpper(role),
 		Email: strings.ToLower(email),
@@ -247,10 +248,8 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 	// Check if the email address belongs to a user, or to a group
 	// we need to make sure, because we need to use different logic
 	var isGroup bool
-	var group *directory.Group
-	var err error
 	err = retry(func() error {
-		group, err = config.directory.Groups.Get(email).Do()
+		_, err := config.directory.Groups.Get(email).Do()
 		return err
 	})
 	isGroup = true
@@ -264,10 +263,8 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 		}
 
 		// Grab the group as a directory member of the current group
-		var currentMember *directory.Member
-		var err error
 		err = retry(func() error {
-			currentMember, err = config.directory.Members.Get(groupEmail, email).Do()
+			_, err := config.directory.Members.Get(groupEmail, email).Do()
 			return err
 		})
 
@@ -309,7 +306,7 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 			// When a user does not exist, the API returns a 400 "memberKey, required"
 			// Returning a friendly message
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "required" && gerr.Code == 400) {
-				return fmt.Errorf("Error adding groupMember %s. Please make sure the user exists beforehand.", email)
+				return fmt.Errorf("error adding groupMember %s, please make sure the user exists beforehand", email)
 			}
 			return err
 		})
