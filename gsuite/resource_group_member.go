@@ -41,6 +41,9 @@ var schemaMember = map[string]*schema.Schema{
 		Type:     schema.TypeString,
 		Required: true,
 		ForceNew: true,
+		StateFunc: func(val interface{}) string {
+			return strings.ToLower(val.(string))
+		},
 	},
 }
 
@@ -48,6 +51,9 @@ var schemaGroup = map[string]*schema.Schema{
 	"group": &schema.Schema{
 		Type:     schema.TypeString,
 		Required: true,
+		StateFunc: func(val interface{}) string {
+			return strings.ToLower(val.(string))
+		},
 	},
 }
 

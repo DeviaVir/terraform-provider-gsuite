@@ -25,6 +25,9 @@ func resourceGroupMembers() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				StateFunc: func(val interface{}) string {
+					return strings.ToLower(val.(string))
+				},
 			},
 			"member": {
 				Type:     schema.TypeSet,
@@ -148,7 +151,7 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 	m := func(vals []map[string]interface{}) map[string]map[string]interface{} {
 		sm := make(map[string]map[string]interface{})
 		for _, member := range vals {
-			email := member["email"].(string)
+			email := strings.ToLower(member["email"].(string))
 			sm[email] = member
 		}
 		return sm
