@@ -12,14 +12,14 @@ GOFILES ?= $(shell go list $(TEST) | grep -v /vendor/)
 GOTAGS ?=
 
 # Number of procs to use
-GOMAXPROCS ?= 4
+GOMAXPROCS ?= 8
 
 # Get the project metadata
-GOVERSION := 1.9.3
-PROJECT := $(CURRENT_DIR:$(GOPATH)/src/%=%)
+GOVERSION := 1.11.3
+PROJECT := github.com/DeviaVir/terraform-provider-gsuite
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
 NAME := $(notdir $(PROJECT))
-VERSION := 0.1.9
+VERSION := 0.1.11
 EXTERNAL_TOOLS = \
 	github.com/golang/dep/cmd/dep
 
@@ -57,12 +57,14 @@ define make-xc-target
 		@printf "%s%20s %s\n" "-->" "${1}/${2}:" "${PROJECT}"
 		@docker run \
 			--interactive \
+			--dns 1.1.1.1 \
+			--dns 1.0.0.1 \
+			--dns 8.8.8.8 \
+			--dns 8.4.4.8 \
 			--rm \
-			--dns="8.8.8.8" \
 			--volume="${CURRENT_DIR}:/go/src/${PROJECT}" \
 			--workdir="/go/src/${PROJECT}" \
 			"golang:${GOVERSION}" \
-			go get -u github.com/DeviaVir/terraform-provider-gsuite && \
 			env \
 				CGO_ENABLED="0" \
 				GOOS="${1}" \
@@ -180,7 +182,7 @@ _sign:
 		--local-user "${GPG_KEY}" \
 		--message "Version ${VERSION}" \
 		--sign \
-		"v${VERSION}" master
+		"v${VERSION}"
 	@echo "--> Do not forget to run:"
 	@echo ""
 	@echo "    git push && git push --tags"

@@ -24,6 +24,9 @@ func resourceGroup() *schema.Resource {
 			"email": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				StateFunc: func(val interface{}) string {
+					return strings.ToLower(val.(string))
+				},
 			},
 
 			"name": &schema.Schema{
