@@ -151,7 +151,7 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 	m := func(vals []map[string]interface{}) map[string]map[string]interface{} {
 		sm := make(map[string]map[string]interface{})
 		for _, member := range vals {
-			email := strings.ToLower(member["email"].(string))
+			email := member["email"].(string)
 			sm[email] = member
 		}
 		return sm
