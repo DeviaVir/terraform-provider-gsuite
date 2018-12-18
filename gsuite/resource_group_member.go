@@ -91,11 +91,47 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("error creating group member: %s", err)
+		if !strings.Contains(err.Error(), "Member already exists") {
+			return fmt.Errorf("error creating group member: %s", err)
+		}
+		log.Printf("[INFO] %s already part of this group. attempting to update", groupMember.Email)
+
+		var existingGroupMembers *directory.Members
+		err = retry(func() error {
+			existingGroupMembers, err = config.directory.Members.List(group).Do()
+			return err
+		})
+		if err != nil {
+			return fmt.Errorf("error locating existing group members: %s", err)
+		}
+		var locatedGroupMember *directory.Member
+		for _, existingGroupMember := range existingGroupMembers.Members {
+			if existingGroupMember.Email == groupMember.Email {
+				locatedGroupMember = existingGroupMember
+				break
+			}
+		}
+		if locatedGroupMember == nil {
+			return fmt.Errorf("error locating existing group member %s", groupMember.Email)
+		}
+		log.Printf("[INFO] found existing group member %s", locatedGroupMember.Email)
+
+		var err error
+		err = retry(func() error {
+			_, err = config.directory.Members.Patch(group, locatedGroupMember.Id, groupMember).Do()
+			return err
+		})
+
+		if err != nil {
+			return fmt.Errorf("error updating existing group member: %s", err)
+		}
+		log.Printf("[INFO] Updated group member: %s", groupMember.Email)
+		d.SetId(locatedGroupMember.Id)
+	} else {
+		log.Printf("[INFO] Created group member: %s", createdGroupMember.Email)
+		d.SetId(createdGroupMember.Id)
 	}
 
-	d.SetId(createdGroupMember.Id)
-	log.Printf("[INFO] Created group member: %s", createdGroupMember.Email)
 	return resourceGroupMemberRead(d, meta)
 }
 
