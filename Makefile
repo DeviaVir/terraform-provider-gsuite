@@ -57,8 +57,11 @@ define make-xc-target
 		@printf "%s%20s %s\n" "-->" "${1}/${2}:" "${PROJECT}"
 		@docker run \
 			--interactive \
+			--dns 1.1.1.1 \
+		        --dns 1.0.0.1 \
+			--dns 8.8.8.8 \
+			--dns 8.4.4.8 \
 			--rm \
-			--dns="1.1.1.1" \
 			--volume="${CURRENT_DIR}:/go/src/${PROJECT}" \
 			--workdir="/go/src/${PROJECT}" \
 			"golang:${GOVERSION}" \
