@@ -35,12 +35,16 @@ func resourceGroupMembers() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: schemaMember,
 				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return strings.ToLower(strings.Trim(old, `"`)) == strings.ToLower(strings.Trim(new, `"`))
+				},
 			},
 		},
 	}
 }
 
 func resourceGroupMembersRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG]: Reading gsuite_group_members")
 	config := meta.(*Config)
 
 	groupEmail := d.Id()
@@ -151,7 +155,8 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 	m := func(vals []map[string]interface{}) map[string]map[string]interface{} {
 		sm := make(map[string]map[string]interface{})
 		for _, member := range vals {
-			email := member["email"].(string)
+			email := strings.ToLower(member["email"].(string))
+			member["email"] = strings.ToLower(member["email"].(string))
 			sm[email] = member
 		}
 		return sm
@@ -363,6 +368,7 @@ func deleteMember(email, groupEmail string, config *Config) (err error) {
 
 // Allow importing using any groupKey (id, email, alias)
 func resourceGroupMembersImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	log.Printf("[DEBUG] Importing gsuite_group_members")
 	config := meta.(*Config)
 
 	var group *directory.Group
