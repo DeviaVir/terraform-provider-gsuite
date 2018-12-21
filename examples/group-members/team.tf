@@ -8,12 +8,12 @@ resource "gsuite_group_members" "testing_team_members" {
   group_email = "${gsuite_group.testing_team.email}"
 
   member {
-    email = "a@xxx.com",
+    email = "a@xxx.com"
     role  = "MEMBER"
   }
 
   member {
-    email = "b@xxx.com",
+    email = "b@xxx.com"
     role  = "OWNER"
   }
 }
