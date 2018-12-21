@@ -94,6 +94,7 @@ func (c *Config) loadAndValidate() error {
 	userAgent := fmt.Sprintf("(%s %s) Terraform/%s",
 		runtime.GOOS, runtime.GOARCH, terraform.VersionString())
 
+
 	// Create the directory service.
 	directorySvc, err := directory.New(client)
 	if err != nil {
