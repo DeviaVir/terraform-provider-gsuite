@@ -3,6 +3,7 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 
@@ -58,7 +59,7 @@ func flattenUserPosixAccounts(posixAccounts []*directory.UserPosixAccount) []map
 	return result
 }
 
-func flattenUserSshPublicKeys(sshPublicKeys []*directory.UserSshPublicKey) []map[string]interface{} {
+func flattenUserSSHPublicKeys(sshPublicKeys []*directory.UserSshPublicKey) []map[string]interface{} {
 	result := make([]map[string]interface{}, len(sshPublicKeys))
 	for i, sshPublicKey := range sshPublicKeys {
 		result[i] = map[string]interface{}{
@@ -241,6 +242,9 @@ func resourceUser() *schema.Resource {
 			"primary_email": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				StateFunc: func(val interface{}) string {
+					return strings.ToLower(val.(string))
+				},
 			},
 
 			"ssh_public_keys": &schema.Schema{
@@ -289,7 +293,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	if v, ok := d.GetOk("primary_email"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "primary_email", v.(string))
-		user.PrimaryEmail = v.(string)
+		user.PrimaryEmail = strings.ToLower(v.(string))
 	}
 	if v, ok := d.GetOk("password"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "password", v.(string))
@@ -321,24 +325,24 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		user.Suspended = v.(bool)
 	}
 
-	userSshs := []*directory.UserSshPublicKey{}
+	userSSHs := []*directory.UserSshPublicKey{}
 	sshCount := d.Get("ssh_public_keys.#").(int)
 	for i := 0; i < sshCount; i++ {
 		sshConfig := d.Get(fmt.Sprintf("ssh_public_keys.%d", i)).(map[string]interface{})
-		userSsh := &directory.UserSshPublicKey{}
+		userSSH := &directory.UserSshPublicKey{}
 
 		if v, ok := sshConfig["expiration_time_usec"]; ok {
 			log.Printf("[DEBUG] Setting ssh %d expiration_time_usec: %v", i, int64(v.(int)))
-			userSsh.ExpirationTimeUsec = int64(v.(int))
+			userSSH.ExpirationTimeUsec = int64(v.(int))
 		}
 		if v, ok := sshConfig["key"]; ok {
 			log.Printf("[DEBUG] Setting ssh %d key: %s", i, v.(string))
-			userSsh.Key = v.(string)
+			userSSH.Key = v.(string)
 		}
 
-		userSshs = append(userSshs, userSsh)
+		userSSHs = append(userSSHs, userSSH)
 	}
-	user.SshPublicKeys = userSshs
+	user.SshPublicKeys = userSSHs
 
 	userPosixs := []*directory.UserPosixAccount{}
 	posixCount := d.Get("posix_accounts.#").(int)
@@ -505,24 +509,24 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("ssh_public_keys") {
-		userSshs := []*directory.UserSshPublicKey{}
+		userSSHs := []*directory.UserSshPublicKey{}
 		sshCount := d.Get("ssh_public_keys.#").(int)
 		for i := 0; i < sshCount; i++ {
 			sshConfig := d.Get(fmt.Sprintf("ssh_public_keys.%d", i)).(map[string]interface{})
-			userSsh := &directory.UserSshPublicKey{}
+			userSSH := &directory.UserSshPublicKey{}
 
 			if v, ok := sshConfig["expiration_time_usec"]; ok {
 				log.Printf("[DEBUG] Setting ssh %d expiration_time_usec: %v", i, int64(v.(int)))
-				userSsh.ExpirationTimeUsec = int64(v.(int))
+				userSSH.ExpirationTimeUsec = int64(v.(int))
 			}
 			if v, ok := sshConfig["key"]; ok {
 				log.Printf("[DEBUG] Setting ssh %d key: %s", i, v.(string))
-				userSsh.Key = v.(string)
+				userSSH.Key = v.(string)
 			}
 
-			userSshs = append(userSshs, userSsh)
+			userSSHs = append(userSSHs, userSSH)
 		}
-		user.SshPublicKeys = userSshs
+		user.SshPublicKeys = userSSHs
 	}
 
 	if d.HasChange("posix_accounts") {
