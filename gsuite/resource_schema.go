@@ -9,14 +9,14 @@ import (
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
-func schema() *schema.Resource {
+func resourceSchema() *schema.Resource {
 	return &schema.Resource{
-		Create: schemaCreate,
-		Read:   schemaRead,
-		Update: schemaUpdate,
-		Delete: schemaDelete,
+		Create: resourceSchemaCreate,
+		Read:   resourceSchemaRead,
+		Update: resourceSchemaUpdate,
+		Delete: resourceSchemaDelete,
 		Importer: &schema.ResourceImporter{
-			State: schemaImporter,
+			State: resourceSchemaImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -92,27 +92,27 @@ func schema() *schema.Resource {
 }
 
 
-// TODO: schemaCreate
-func schemaCreate(d *schema.ResourceData, meta interface{}) error {
+// TODO: resourceSchemaCreate
+func resourceSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-// TODO: schemaRead
-func schemaRead(d *schema.ResourceData, meta interface{}) error {
+// TODO: resourceSchemaRead
+func resourceSchemaRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-// TODO: schemaUpdate
-func schemaUpdate(d *schema.ResourceData, meta interface{}) error {
+// TODO: resourceSchemaUpdate
+func resourceSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-// TODO: schemaDelete
-func schemaDelete(d *schema.ResourceData, meta interface{}) error {
+// TODO: resourceSchemaDelete
+func resourceSchemaDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-// TODO: schemaImporter
-func schemaImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+// TODO: resourceSchemaImporter
+func resourceSchemaImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	return nil, nil
 }
