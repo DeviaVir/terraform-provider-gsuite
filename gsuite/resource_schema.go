@@ -91,7 +91,6 @@ func resourceSchema() *schema.Resource {
 	}
 }
 
-
 // TODO: resourceSchemaCreate
 func resourceSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 	return nil

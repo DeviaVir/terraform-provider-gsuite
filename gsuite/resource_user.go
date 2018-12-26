@@ -18,19 +18,19 @@ var googleLookup = map[string]string{
 	"customer_id":                "CustomerId",
 	"deletion_time":              "DeletionTime",
 	"etag":                       "Etag",
-	"include_in_global_list": "IncludeInGlobalAddressList",
-	"is_ip_whitelisted":      "IpWhitelisted",
-	"is_admin":               "IsAdmin",
-	"is_delegated_admin":     "IsDelegatedAdmin",
-	"2s_enforced":            "IsEnforcedIn2Sv",
-	"2s_enrolled":            "IsEnrolledIn2Sv",
-	"is_mailbox_setup":       "IsMailboxSetup",
-	"last_login_time":        "LastLoginTime",
-	"password":               "Password",
-	"hash_function":          "HashFunction",
-	"primary_email":          "PrimaryEmail",
-	"is_suspended":           "Suspended",
-	"suspension_reason":      "SuspensionReason",
+	"include_in_global_list":     "IncludeInGlobalAddressList",
+	"is_ip_whitelisted":          "IpWhitelisted",
+	"is_admin":                   "IsAdmin",
+	"is_delegated_admin":         "IsDelegatedAdmin",
+	"2s_enforced":                "IsEnforcedIn2Sv",
+	"2s_enrolled":                "IsEnrolledIn2Sv",
+	"is_mailbox_setup":           "IsMailboxSetup",
+	"last_login_time":            "LastLoginTime",
+	"password":                   "Password",
+	"hash_function":              "HashFunction",
+	"primary_email":              "PrimaryEmail",
+	"is_suspended":               "Suspended",
+	"suspension_reason":          "SuspensionReason",
 }
 
 func flattenUserName(name *directory.UserName) map[string]interface{} {
@@ -64,8 +64,8 @@ func flattenUserSSHPublicKeys(sshPublicKeys []*directory.UserSshPublicKey) []map
 	for i, sshPublicKey := range sshPublicKeys {
 		result[i] = map[string]interface{}{
 			"expiration_time_usec": sshPublicKey.ExpirationTimeUsec,
-			"key":         sshPublicKey.Key,
-			"fingerprint": sshPublicKey.Fingerprint,
+			"key":                  sshPublicKey.Key,
+			"fingerprint":          sshPublicKey.Fingerprint,
 		}
 	}
 	return result
