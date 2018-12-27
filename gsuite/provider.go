@@ -40,6 +40,10 @@ func Provider() *schema.Provider {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
+			"customer_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"gsuite_group":         resourceGroup(),
@@ -69,6 +73,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Credentials:           credentials,
 		ImpersonatedUserEmail: impersonatedUserEmail,
 		OauthScopes:           oauthScopes,
+		CustomerId:            d.Get("customer_id").(string),
 	}
 
 	if err := config.loadAndValidate(); err != nil {
