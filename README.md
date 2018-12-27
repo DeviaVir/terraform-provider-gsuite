@@ -105,10 +105,15 @@ GSuite provider.
 
 1. Next time you run `terraform plan` it'll use your updated version
 
-Some useful resources:
-
+### Relevant Google Admin SDK Documentation
+#### General
 * http://google.golang.org/api/admin/directory/v1
 * https://developers.google.com/admin-sdk/directory/v1/reference/
+
+#### Schema Types
+* https://developers.google.com/admin-sdk/directory/v1/reference/users
+* https://developers.google.com/admin-sdk/directory/v1/reference/groups
+* https://developers.google.com/admin-sdk/directory/v1/reference/schemas
 
 ## Notes
 
