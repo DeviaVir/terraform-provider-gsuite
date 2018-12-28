@@ -31,7 +31,8 @@ func resourceUserSchema() *schema.Resource {
 			},
 			"display_name": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Computed: true,
 			},
 			"field": {
 				Type:     schema.TypeList,
@@ -42,7 +43,11 @@ func resourceUserSchema() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-
+						"display_name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
 						"field_type": {
 							Type:     schema.TypeString,
 							Required: true,
@@ -115,6 +120,10 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 		value := v.(string)
 		log.Printf("[DEBUG] Setting %s: %s", "display_name", value)
 		userSchema.DisplayName = value
+	}
+
+	if userSchema.DisplayName == "" {
+		userSchema.DisplayName = userSchema.SchemaName
 	}
 
 	fields, err := getUserSchemaFieldSpecs(d)
@@ -244,6 +253,14 @@ func getUserSchemaFieldSpecs(d *schema.ResourceData) ([]*directory.SchemaFieldSp
 			MultiValued:    fields["multi_valued"].(bool),
 			ReadAccessType: fields["read_access_type"].(string),
 			Indexed:        &indexed,
+		}
+
+		if fields["display_name"] != "" {
+			spec.DisplayName = fields["display_name"].(string)
+		}
+
+		if spec.DisplayName == "" {
+			spec.DisplayName = spec.FieldName
 		}
 
 		if values, ok := fields["range"].(map[string]interface{}); ok {
