@@ -31,9 +31,7 @@ type Config struct {
 	// therefore the service account needs to impersonate one of those users to access the Admin SDK Directory API.
 	// See https://developers.google.com/admin-sdk/directory/v1/guides/delegation
 	ImpersonatedUserEmail string
-
-	CustomerId  string
-	OauthScopes []string
+	OauthScopes           []string
 
 	directory *directory.Service
 }

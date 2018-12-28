@@ -10,6 +10,11 @@ import (
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
+// myCustomerID is a stand-in for the `customerId` field that's a required
+// argument to several API requests. This save us from having to query an
+// external resource and/or require it as an argument on the provider itself.
+const myCustomerID = "my_customer"
+
 func resourceUserSchema() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceUserSchemaCreate,
@@ -134,7 +139,7 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 	var created *directory.Schema
 
 	err = retry(func() error {
-		created, err = config.directory.Schemas.Insert(config.CustomerId, userSchema).Do()
+		created, err = config.directory.Schemas.Insert(myCustomerID, userSchema).Do()
 		return err
 	})
 
@@ -155,7 +160,7 @@ func resourceUserSchemaRead(d *schema.ResourceData, meta interface{}) error {
 		err  error
 	)
 	err = retry(func() error {
-		read, err = config.directory.Schemas.Get(config.CustomerId, d.Id()).Do()
+		read, err = config.directory.Schemas.Get(myCustomerID, d.Id()).Do()
 		return err
 	})
 	if err != nil {
@@ -173,7 +178,7 @@ func resourceUserSchemaRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
-	userSchema, err := config.directory.Schemas.Get(config.CustomerId, d.Id()).Do()
+	userSchema, err := config.directory.Schemas.Get(myCustomerID, d.Id()).Do()
 	if err != nil {
 		return err
 	}
@@ -205,7 +210,7 @@ func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 	var updated *directory.Schema
 
 	err = retry(func() error {
-		updated, err = config.directory.Schemas.Update(config.CustomerId, d.Id(), userSchema).Do()
+		updated, err = config.directory.Schemas.Update(myCustomerID, d.Id(), userSchema).Do()
 		return err
 	})
 
@@ -220,14 +225,14 @@ func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceUserSchemaDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 	return retry(func() error {
-		return config.directory.Schemas.Delete(config.CustomerId, d.Id()).Do()
+		return config.directory.Schemas.Delete(myCustomerID, d.Id()).Do()
 	})
 }
 
 func resourceUserSchemaImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
 
-	imported, err := config.directory.Schemas.Get(config.CustomerId, d.Id()).Do()
+	imported, err := config.directory.Schemas.Get(myCustomerID, d.Id()).Do()
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching schema. Make sure the schema exists: %s ", err)
 	}
