@@ -10,8 +10,6 @@ import (
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
-const fieldKind = "admin#directory#schema#fieldspec"
-
 func resourceUserSchema() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceUserSchemaCreate,
@@ -23,16 +21,18 @@ func resourceUserSchema() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"display_name": {
+			"schema_id": {
 				Type:     schema.TypeString,
-				Required: true,
+				Computed: true,
 			},
-
 			"schema_name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-
+			"display_name": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
 			"field": {
 				Type:     schema.TypeList,
 				Required: true,
@@ -101,17 +101,26 @@ func resourceUserSchema() *schema.Resource {
 	}
 }
 
-// TODO: resourceUserSchemaCreate
 func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	userSchema := &directory.Schema{
-		SchemaName: d.Get("schema_name").(string),
+	userSchema := &directory.Schema{}
+	if v, ok := d.GetOk("schema_name"); ok {
+		value := v.(string)
+		log.Printf("[DEBUG] Setting %s: %s", "schema_name", value)
+		userSchema.SchemaName = value
 	}
 
-	for i := 0; i < d.Get("field.#").(int); i++ {
-		fields := d.Get(fmt.Sprintf("field.%d", i)).(map[string]interface{})
+	if v, ok := d.GetOk("display_name"); ok {
+		value := v.(string)
+		log.Printf("[DEBUG] Setting %s: %s", "display_name", value)
+		userSchema.DisplayName = value
+	}
 
+	var fieldEntries []map[string]interface{}
+	for i := 0; i < d.Get("field.#").(int); i++ {
+		key := fmt.Sprintf("field.%d", i)
+		fields := d.Get(key).(map[string]interface{})
 		indexed := fields["indexed"].(bool)
 		spec := &directory.SchemaFieldSpec{
 			FieldName:      fields["field_name"].(string),
@@ -119,7 +128,6 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 			MultiValued:    fields["multi_valued"].(bool),
 			ReadAccessType: fields["read_access_type"].(string),
 			Indexed:        &indexed,
-			Kind:           fieldKind,
 		}
 
 		if values, ok := fields["range"].(map[string]interface{}); ok {
@@ -161,15 +169,22 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		userSchema.Fields = append(userSchema.Fields, spec)
+		fieldEntries = append(fieldEntries, map[string]interface{}{
+			"field_name":       spec.FieldName,
+			"field_type":       spec.FieldType,
+			"multi_valued":     spec.MultiValued,
+			"read_access_type": spec.ReadAccessType,
+			"indexed":          *spec.Indexed,
+		})
 	}
 
 	var (
-		createdUserSchema *directory.Schema
-		err               error
+		created *directory.Schema
+		err     error
 	)
 
 	err = retry(func() error {
-		createdUserSchema, err = config.directory.Schemas.Insert(config.CustomerId, userSchema).Do()
+		created, err = config.directory.Schemas.Insert(config.CustomerId, userSchema).Do()
 		return err
 	})
 
@@ -177,26 +192,49 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error creating user schema: %s", err)
 	}
 
-	log.Printf("[INFO] Created user schema: %s", createdUserSchema.SchemaName)
-	return nil
+	d.SetId(created.SchemaId)
+	log.Printf("[INFO] Created user schema: %s", created.SchemaName)
+	return resourceUserSchemaRead(d, meta)
 }
 
-// TODO: resourceUserSchemaRead
 func resourceUserSchemaRead(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(*Config)
+
+	var (
+		read *directory.Schema
+		err  error
+	)
+	err = retry(func() error {
+		read, err = config.directory.Schemas.Get(config.CustomerId, d.Id()).Do()
+		return err
+	})
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("Schema %q", d.Get("schema_name").(string)))
+	}
+
+	d.SetId(read.SchemaId)
+	d.Set("schema_id", read.SchemaId)
+	d.Set("schema_name", read.SchemaName)
+	d.Set("display_name", read.DisplayName)
+	d.Set("field", read.Fields)
+
 	return nil
 }
 
 // TODO: resourceUserSchemaUpdate
 func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
+	panic("update")
 	return nil
 }
 
 // TODO: resourceUserSchemaDelete
 func resourceUserSchemaDelete(d *schema.ResourceData, meta interface{}) error {
+	panic("delete")
 	return nil
 }
 
 // TODO: resourceUserSchemaImporter
 func resourceUserSchemaImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	panic("import")
 	return nil, nil
 }
