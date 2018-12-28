@@ -267,6 +267,8 @@
     "helper/pathorcontents",
     "helper/resource",
     "helper/schema",
+    "helper/structure",
+    "helper/validation",
     "moduledeps",
     "plugin",
     "plugin/discovery",
@@ -519,7 +521,7 @@
   revision = "e19ae1496984b1c655b8044a65c0300a3c878dd3"
 
 [[projects]]
-  digest = "1:afade8435357ef50a10195bbd4792f5967a9f8414d0c1c5aee71f3034d7c327b"
+  digest = "1:7873bd40db14885e3c790a4134341e998abf3d83d0872a93613f765025903026"
   name = "google.golang.org/api"
   packages = [
     "admin/directory/v1",
@@ -528,7 +530,7 @@
     "googleapi/internal/uritemplates",
   ]
   pruneopts = ""
-  revision = "4c1b07210d562506ab52117997c3b7e294627ac9"
+  revision = "65a46cafb132eff435c7d1e0f439cc73c8eebb85"
 
 [[projects]]
   digest = "1:934fb8966f303ede63aa405e2c8d7f0a427a05ea8df335dfdc1833dd4d40756f"
@@ -598,6 +600,7 @@
     "github.com/hashicorp/terraform/helper/pathorcontents",
     "github.com/hashicorp/terraform/helper/resource",
     "github.com/hashicorp/terraform/helper/schema",
+    "github.com/hashicorp/terraform/helper/validation",
     "github.com/hashicorp/terraform/plugin",
     "github.com/hashicorp/terraform/terraform",
     "github.com/pkg/errors",
