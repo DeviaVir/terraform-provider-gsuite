@@ -117,71 +117,12 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 		userSchema.DisplayName = value
 	}
 
-	var fieldEntries []map[string]interface{}
-	for i := 0; i < d.Get("field.#").(int); i++ {
-		key := fmt.Sprintf("field.%d", i)
-		fields := d.Get(key).(map[string]interface{})
-		indexed := fields["indexed"].(bool)
-		spec := &directory.SchemaFieldSpec{
-			FieldName:      fields["field_name"].(string),
-			FieldType:      fields["field_type"].(string),
-			MultiValued:    fields["multi_valued"].(bool),
-			ReadAccessType: fields["read_access_type"].(string),
-			Indexed:        &indexed,
-		}
-
-		if values, ok := fields["range"].(map[string]interface{}); ok {
-			var (
-				minValue float64
-				maxValue float64
-				err      error
-			)
-			switch spec.FieldType {
-			case "DOUBLE":
-				minValue, err = strconv.ParseFloat(values["min_value"].(string), 64)
-				if err != nil {
-					return err
-				}
-
-				maxValue, err = strconv.ParseFloat(values["max_value"].(string), 64)
-				if err != nil {
-					return err
-				}
-
-			case "INT64":
-				min, err := strconv.Atoi(values["min_value"].(string))
-				if err != nil {
-					return err
-				}
-				minValue = float64(min)
-
-				max, err := strconv.Atoi(values["max_value"].(string))
-				if err != nil {
-					return err
-				}
-				maxValue = float64(max)
-			}
-
-			spec.NumericIndexingSpec = &directory.SchemaFieldSpecNumericIndexingSpec{
-				MinValue: minValue,
-				MaxValue: maxValue,
-			}
-		}
-
-		userSchema.Fields = append(userSchema.Fields, spec)
-		fieldEntries = append(fieldEntries, map[string]interface{}{
-			"field_name":       spec.FieldName,
-			"field_type":       spec.FieldType,
-			"multi_valued":     spec.MultiValued,
-			"read_access_type": spec.ReadAccessType,
-			"indexed":          *spec.Indexed,
-		})
+	fields, err := getUserSchemaFieldSpecs(d)
+	if err != nil {
+		return err
 	}
-
-	var (
-		created *directory.Schema
-		err     error
-	)
+	userSchema.Fields = fields
+	var created *directory.Schema
 
 	err = retry(func() error {
 		created, err = config.directory.Schemas.Insert(config.CustomerId, userSchema).Do()
@@ -221,10 +162,50 @@ func resourceUserSchemaRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-// TODO: resourceUserSchemaUpdate
 func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
-	panic("update")
-	return nil
+	config := meta.(*Config)
+	userSchema, err := config.directory.Schemas.Get(config.CustomerId, d.Id()).Do()
+	if err != nil {
+		return err
+	}
+
+	if d.HasChange("schema_name") {
+		if v, ok := d.GetOk("schema_name"); ok {
+			value := v.(string)
+			log.Printf("[DEBUG] Updating schema %s: %s -> %s", "schema_name", value, d.Get("schema_name"))
+			userSchema.SchemaName = value
+		}
+	}
+
+	if d.HasChange("display_name") {
+		if v, ok := d.GetOk("display_name"); ok {
+			value := v.(string)
+			log.Printf("[DEBUG] Updating schema %s: %s -> %s", "display_name", value, d.Get("display_name"))
+			userSchema.DisplayName = value
+		}
+	}
+
+	if d.HasChange("field") {
+		specs, err := getUserSchemaFieldSpecs(d)
+		if err != nil {
+			return err
+		}
+		userSchema.Fields = specs
+	}
+
+	var updated *directory.Schema
+
+	err = retry(func() error {
+		updated, err = config.directory.Schemas.Update(config.CustomerId, d.Id(), userSchema).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("Error updating user schema: %s", err)
+	}
+
+	log.Printf("[INFO] Updated schema: %s", updated.DisplayName)
+	return resourceUserSchemaRead(d, meta)
 }
 
 // TODO: resourceUserSchemaDelete
@@ -237,4 +218,62 @@ func resourceUserSchemaDelete(d *schema.ResourceData, meta interface{}) error {
 func resourceUserSchemaImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	panic("import")
 	return nil, nil
+}
+
+func getUserSchemaFieldSpecs(d *schema.ResourceData) ([]*directory.SchemaFieldSpec, error) {
+	var specs []*directory.SchemaFieldSpec
+	for i := 0; i < d.Get("field.#").(int); i++ {
+		key := fmt.Sprintf("field.%d", i)
+		fields := d.Get(key).(map[string]interface{})
+		indexed := fields["indexed"].(bool)
+		spec := &directory.SchemaFieldSpec{
+			FieldName:      fields["field_name"].(string),
+			FieldType:      fields["field_type"].(string),
+			MultiValued:    fields["multi_valued"].(bool),
+			ReadAccessType: fields["read_access_type"].(string),
+			Indexed:        &indexed,
+		}
+
+		if values, ok := fields["range"].(map[string]interface{}); ok {
+			var (
+				minValue float64
+				maxValue float64
+				err      error
+			)
+			switch spec.FieldType {
+			case "DOUBLE":
+				minValue, err = strconv.ParseFloat(values["min_value"].(string), 64)
+				if err != nil {
+					return nil, err
+				}
+
+				maxValue, err = strconv.ParseFloat(values["max_value"].(string), 64)
+				if err != nil {
+					return nil, err
+				}
+
+			case "INT64":
+				min, err := strconv.Atoi(values["min_value"].(string))
+				if err != nil {
+					return nil, err
+				}
+				minValue = float64(min)
+
+				max, err := strconv.Atoi(values["max_value"].(string))
+				if err != nil {
+					return nil, err
+				}
+				maxValue = float64(max)
+			}
+
+			spec.NumericIndexingSpec = &directory.SchemaFieldSpecNumericIndexingSpec{
+				MinValue: minValue,
+				MaxValue: maxValue,
+			}
+		}
+
+		specs = append(specs, spec)
+	}
+
+	return specs, nil
 }
