@@ -208,10 +208,11 @@ func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 	return resourceUserSchemaRead(d, meta)
 }
 
-// TODO: resourceUserSchemaDelete
 func resourceUserSchemaDelete(d *schema.ResourceData, meta interface{}) error {
-	panic("delete")
-	return nil
+	config := meta.(*Config)
+	return retry(func() error {
+		return config.directory.Schemas.Delete(config.CustomerId, d.Id()).Do()
+	})
 }
 
 // TODO: resourceUserSchemaImporter
