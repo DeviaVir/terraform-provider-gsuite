@@ -215,10 +215,21 @@ func resourceUserSchemaDelete(d *schema.ResourceData, meta interface{}) error {
 	})
 }
 
-// TODO: resourceUserSchemaImporter
 func resourceUserSchemaImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	panic("import")
-	return nil, nil
+	config := meta.(*Config)
+
+	imported, err := config.directory.Schemas.Get(config.CustomerId, d.Id()).Do()
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching schema. Make sure the schema exists: %s ", err)
+	}
+
+	d.SetId(imported.SchemaId)
+	d.Set("schema_id", imported.SchemaId)
+	d.Set("schema_name", imported.SchemaName)
+	d.Set("display_name", imported.DisplayName)
+	d.Set("field", imported.Fields)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 func getUserSchemaFieldSpecs(d *schema.ResourceData) ([]*directory.SchemaFieldSpec, error) {
