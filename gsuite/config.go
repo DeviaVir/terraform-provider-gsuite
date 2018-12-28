@@ -31,7 +31,8 @@ type Config struct {
 	// therefore the service account needs to impersonate one of those users to access the Admin SDK Directory API.
 	// See https://developers.google.com/admin-sdk/directory/v1/guides/delegation
 	ImpersonatedUserEmail string
-	OauthScopes           []string
+
+	OauthScopes []string
 
 	directory *directory.Service
 }
@@ -45,6 +46,10 @@ func (c *Config) loadAndValidate() error {
 
 	var client *http.Client
 	if c.Credentials != "" {
+		if c.ImpersonatedUserEmail == "" {
+			return fmt.Errorf("required field missing: impersonated_user_email")
+		}
+
 		contents, _, err := pathorcontents.Read(c.Credentials)
 		if err != nil {
 			return fmt.Errorf("Error loading credentials: %s", err)
@@ -69,9 +74,6 @@ func (c *Config) loadAndValidate() error {
 		}
 
 		conf.Subject = c.ImpersonatedUserEmail
-		if c.ImpersonatedUserEmail == "" {
-			conf.Subject = conf.Email
-		}
 
 		// Initiate an http.Client. The following GET request will be
 		// authorized and authenticated on the behalf of
