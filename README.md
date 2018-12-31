@@ -115,6 +115,11 @@ GSuite provider.
 * https://developers.google.com/admin-sdk/directory/v1/reference/groups
 * https://developers.google.com/admin-sdk/directory/v1/reference/schemas
 
+When using a service account, make sure to add:
+`https://www.googleapis.com/auth/admin.directory.userschema`
+to the `oauth_scopes` list, otherwise you will be missing permissions to manage
+user schemas.
+
 ## Notes
 
 - Asking too many permissions right now, but rather start out with too much and tone down later on
