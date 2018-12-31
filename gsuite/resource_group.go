@@ -29,6 +29,12 @@ func resourceGroup() *schema.Resource {
 				},
 			},
 
+			"aliases": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -47,12 +53,6 @@ func resourceGroup() *schema.Resource {
 			"admin_created": &schema.Schema{
 				Type:     schema.TypeBool,
 				Computed: true,
-			},
-
-			"aliases": &schema.Schema{
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
 			"non_editable_aliases": &schema.Schema{
@@ -90,6 +90,23 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if err != nil {
 		return fmt.Errorf("Error creating group: %s", err)
+	}
+
+	// Handle group aliases
+	aliasesCount := d.Get("aliases.#").(int)
+	for i := 0; i < aliasesCount; i++ {
+		cfgAlias := d.Get(fmt.Sprintf("aliases.%d", i)).(string)
+		err = retry(func() error {
+			alias := &directory.Alias{
+				Alias: cfgAlias,
+			}
+			_, err = config.directory.Groups.Aliases.Insert(d.Id(), alias).Do()
+			return err
+		})
+	}
+
+	if err != nil {
+		return fmt.Errorf("Error creating group aliases: %s", err)
 	}
 
 	d.SetId(createdGroup.Id)
@@ -143,6 +160,46 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if err != nil {
 		return fmt.Errorf("Error updating group: %s", err)
+	}
+
+	// Handle group aliases
+	var aliasesResponse *directory.Aliases
+	err = retry(func() error {
+		aliasesResponse, err = config.directory.Groups.Aliases.List(d.Id()).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("Could not list group aliases: %s", err)
+	}
+
+	for _, v := range aliasesResponse.Aliases {
+		c, ok := v.(map[string]interface {})
+		if ok {
+			alias := c["alias"].(string)
+			log.Printf("[DEBUG] Removing alias: %s", alias)
+			err = config.directory.Groups.Aliases.Delete(d.Id(), alias).Do()
+		}
+	}
+
+	if err != nil {
+		return fmt.Errorf("Error removing group aliases: %s", err)
+	}
+
+	aliasesCount := d.Get("aliases.#").(int)
+	for i := 0; i < aliasesCount; i++ {
+		cfgAlias := d.Get(fmt.Sprintf("aliases.%d", i)).(string)
+		err = retry(func() error {
+			alias := &directory.Alias{
+				Alias: cfgAlias,
+			}
+			_, err = config.directory.Groups.Aliases.Insert(d.Id(), alias).Do()
+			return err
+		})
+	}
+
+	if err != nil {
+		return fmt.Errorf("Error creating group aliases: %s", err)
 	}
 
 	log.Printf("[INFO] Updated group: %s", updatedGroup.Email)

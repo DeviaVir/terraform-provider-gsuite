@@ -39,6 +39,7 @@ type Config struct {
 // loadAndValidate loads the application default credentials from the
 // environment and creates a client for communicating with Google APIs.
 func (c *Config) loadAndValidate() error {
+	log.Println("[INFO] Building gsuite client config structure")
 	var account accountFile
 
 	oauthScopes := c.OauthScopes
@@ -92,6 +93,7 @@ func (c *Config) loadAndValidate() error {
 	client.Transport = logging.NewTransport("Google", client.Transport)
 	userAgent := fmt.Sprintf("(%s %s) Terraform/%s",
 		runtime.GOOS, runtime.GOARCH, terraform.VersionString())
+
 
 	// Create the directory service.
 	directorySvc, err := directory.New(client)

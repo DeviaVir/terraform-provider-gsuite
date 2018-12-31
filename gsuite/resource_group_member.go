@@ -44,6 +44,9 @@ var schemaMember = map[string]*schema.Schema{
 		StateFunc: func(val interface{}) string {
 			return strings.ToLower(val.(string))
 		},
+		DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+			return strings.ToLower(strings.Trim(old, `"`)) == strings.ToLower(strings.Trim(new, `"`))
+		},
 	},
 }
 
