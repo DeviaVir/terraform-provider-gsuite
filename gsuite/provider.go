@@ -44,6 +44,7 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"gsuite_group":         resourceGroup(),
 			"gsuite_user":          resourceUser(),
+			"gsuite_user_schema":   resourceUserSchema(),
 			"gsuite_group_member":  resourceGroupMember(),
 			"gsuite_group_members": resourceGroupMembers(),
 		},
@@ -61,8 +62,15 @@ func oauthScopesFromConfigOrDefault(oauthScopesSet *schema.Set) []string {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+	var impersonatedUserEmail string
 	credentials := d.Get("credentials").(string)
-	impersonatedUserEmail := d.Get("impersonated_user_email").(string)
+	if v, ok := d.GetOk("impersonated_user_email"); ok {
+		impersonatedUserEmail = v.(string)
+	} else {
+		if len(os.Getenv("IMPERSONATED_USER_EMAIL")) > 0 {
+			impersonatedUserEmail = os.Getenv("IMPERSONATED_USER_EMAIL")
+		}
+	}
 	oauthScopes := oauthScopesFromConfigOrDefault(d.Get("oauth_scopes").(*schema.Set))
 	config := Config{
 		Credentials:           credentials,

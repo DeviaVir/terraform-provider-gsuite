@@ -48,6 +48,7 @@ Credentials can also be provided via the following environment variables:
 - GOOGLE_CREDENTIALS
 - GOOGLE_CLOUD_KEYFILE_JSON
 - GCLOUD_KEYFILE_JSON
+- IMPERSONATED_USER_EMAIL
 
 ### Using a personal administrator account
 
@@ -105,10 +106,20 @@ GSuite provider.
 
 1. Next time you run `terraform plan` it'll use your updated version
 
-Some useful resources:
-
+### Relevant Google Admin SDK Documentation
+#### General
 * http://google.golang.org/api/admin/directory/v1
 * https://developers.google.com/admin-sdk/directory/v1/reference/
+
+#### Schema Types
+* https://developers.google.com/admin-sdk/directory/v1/reference/users
+* https://developers.google.com/admin-sdk/directory/v1/reference/groups
+* https://developers.google.com/admin-sdk/directory/v1/reference/schemas
+
+When using a service account, make sure to add:
+`https://www.googleapis.com/auth/admin.directory.userschema`
+to the `oauth_scopes` list, otherwise you will be missing permissions to manage
+user schemas.
 
 ## Notes
 
