@@ -174,7 +174,7 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, v := range aliasesResponse.Aliases {
-		c, ok := v.(map[string]interface {})
+		c, ok := v.(map[string]interface{})
 		if ok {
 			alias := c["alias"].(string)
 			log.Printf("[DEBUG] Removing alias: %s", alias)
