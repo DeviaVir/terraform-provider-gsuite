@@ -1,27 +1,20 @@
 package gsuite
 
 import (
-	"context"
-	"time"
-
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/pkg/errors"
 	"log"
 	"os"
-)
 
-var (
-	// contextTimeout is the global context timeout for requests to complete.
-	contextTimeout = 15 * time.Second
+	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/pkg/errors"
 )
 
 // Provider returns the actual provider instance.
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"credentials": &schema.Schema{
+			"credentials": {
 				Type:     schema.TypeString,
 				Optional: true,
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
@@ -31,15 +24,18 @@ func Provider() *schema.Provider {
 				}, nil),
 				ValidateFunc: validateCredentials,
 			},
-			"impersonated_user_email": &schema.Schema{
+			"impersonated_user_email": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"oauth_scopes": &schema.Schema{
+			"oauth_scopes": {
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
+		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"gsuite_user_attributes": dataUserAttributes(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"gsuite_group":         resourceGroup(),
@@ -83,11 +79,6 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	return &config, nil
-}
-
-// contextWithTimeout creates a new context with the global context timeout.
-func contextWithTimeout() (context.Context, func()) {
-	return context.WithTimeout(context.Background(), contextTimeout)
 }
 
 func validateCredentials(v interface{}, k string) (warnings []string, errors []error) {

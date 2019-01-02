@@ -2,36 +2,13 @@ package gsuite
 
 import (
 	"fmt"
+	"google.golang.org/api/googleapi"
 	"log"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
-
 	directory "google.golang.org/api/admin/directory/v1"
 )
-
-var googleLookup = map[string]string{
-	"aliases":                    "Aliases",
-	"agreed_to_terms":            "AgreedToTerms",
-	"change_password_next_login": "ChangePasswordAtNextLogin",
-	"creation_time":              "CreationTime",
-	"customer_id":                "CustomerId",
-	"deletion_time":              "DeletionTime",
-	"etag":                       "Etag",
-	"include_in_global_list":     "IncludeInGlobalAddressList",
-	"is_ip_whitelisted":          "IpWhitelisted",
-	"is_admin":                   "IsAdmin",
-	"is_delegated_admin":         "IsDelegatedAdmin",
-	"2s_enforced":                "IsEnforcedIn2Sv",
-	"2s_enrolled":                "IsEnrolledIn2Sv",
-	"is_mailbox_setup":           "IsMailboxSetup",
-	"last_login_time":            "LastLoginTime",
-	"password":                   "Password",
-	"hash_function":              "HashFunction",
-	"primary_email":              "PrimaryEmail",
-	"is_suspended":               "Suspended",
-	"suspension_reason":          "SuspensionReason",
-}
 
 func flattenUserName(name *directory.UserName) map[string]interface{} {
 	return map[string]interface{}{
@@ -39,36 +16,6 @@ func flattenUserName(name *directory.UserName) map[string]interface{} {
 		"full_name":   name.FullName,
 		"given_name":  name.GivenName,
 	}
-}
-
-func flattenUserPosixAccounts(posixAccounts []*directory.UserPosixAccount) []map[string]interface{} {
-	result := make([]map[string]interface{}, len(posixAccounts))
-	for i, posixAccount := range posixAccounts {
-		result[i] = map[string]interface{}{
-			"account_id":     posixAccount.AccountId,
-			"gecos":          posixAccount.Gecos,
-			"gid":            posixAccount.Gid,
-			"home_directory": posixAccount.HomeDirectory,
-			"system_id":      posixAccount.SystemId,
-			"primary":        posixAccount.Primary,
-			"shell":          posixAccount.Shell,
-			"uid":            posixAccount.Uid,
-			"username":       posixAccount.Username,
-		}
-	}
-	return result
-}
-
-func flattenUserSSHPublicKeys(sshPublicKeys []*directory.UserSshPublicKey) []map[string]interface{} {
-	result := make([]map[string]interface{}, len(sshPublicKeys))
-	for i, sshPublicKey := range sshPublicKeys {
-		result[i] = map[string]interface{}{
-			"expiration_time_usec": sshPublicKey.ExpirationTimeUsec,
-			"key":                  sshPublicKey.Key,
-			"fingerprint":          sshPublicKey.Fingerprint,
-		}
-	}
-	return result
 }
 
 func resourceUser() *schema.Resource {
@@ -82,99 +29,99 @@ func resourceUser() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"aliases": &schema.Schema{
+			"aliases": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
-			"agreed_to_terms": &schema.Schema{
+			"agreed_to_terms": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"change_password_next_login": &schema.Schema{
+			"change_password_next_login": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"creation_time": &schema.Schema{
+			"creation_time": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"customer_id": &schema.Schema{
+			"customer_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"deletion_time": &schema.Schema{
+			"deletion_time": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"etag": &schema.Schema{
+			"etag": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"include_in_global_list": &schema.Schema{
+			"include_in_global_list": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
-			"is_ip_whitelisted": &schema.Schema{
+			"is_ip_whitelisted": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"is_admin": &schema.Schema{
+			"is_admin": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"is_delegated_admin": &schema.Schema{
+			"is_delegated_admin": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"2s_enforced": &schema.Schema{
+			"2s_enforced": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"2s_enrolled": &schema.Schema{
+			"2s_enrolled": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"is_mailbox_setup": &schema.Schema{
+			"is_mailbox_setup": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"last_login_time": &schema.Schema{
+			"last_login_time": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeList,
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"family_name": &schema.Schema{
+						"family_name": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"full_name": &schema.Schema{
+						"full_name": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"given_name": &schema.Schema{
+						"given_name": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
@@ -182,56 +129,56 @@ func resourceUser() *schema.Resource {
 				},
 			},
 
-			"password": &schema.Schema{
+			"password": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
 			// md5, sha-1 and crypt
-			"hash_function": &schema.Schema{
+			"hash_function": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"posix_accounts": &schema.Schema{
+			"posix_accounts": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"account_id": &schema.Schema{
+						"account_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"gecos": &schema.Schema{
+						"gecos": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"gid": &schema.Schema{
+						"gid": {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"home_directory": &schema.Schema{
+						"home_directory": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"shell": &schema.Schema{
+						"shell": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"system_id": &schema.Schema{
+						"system_id": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"primary": &schema.Schema{
+						"primary": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
-						"uid": &schema.Schema{
+						"uid": {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"username": &schema.Schema{
+						"username": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
@@ -239,7 +186,7 @@ func resourceUser() *schema.Resource {
 				},
 			},
 
-			"primary_email": &schema.Schema{
+			"primary_email": {
 				Type:     schema.TypeString,
 				Required: true,
 				StateFunc: func(val interface{}) string {
@@ -247,20 +194,20 @@ func resourceUser() *schema.Resource {
 				},
 			},
 
-			"ssh_public_keys": &schema.Schema{
+			"ssh_public_keys": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"expiration_time_usec": &schema.Schema{
+						"expiration_time_usec": {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"key": &schema.Schema{
+						"key": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"fingerprint": &schema.Schema{
+						"fingerprint": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -268,15 +215,32 @@ func resourceUser() *schema.Resource {
 				},
 			},
 
-			"is_suspended": &schema.Schema{
+			"is_suspended": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"suspension_reason": &schema.Schema{
+			"suspension_reason": {
 				Type:     schema.TypeString,
 				Optional: true,
+			},
+
+			"custom_schema": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"value": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -386,6 +350,17 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		userPosixs = append(userPosixs, userPosix)
 	}
 	user.PosixAccounts = userPosixs
+
+	customSchemas := map[string]googleapi.RawMessage{}
+	for i := 0; i < d.Get("custom_schema.#").(int); i++ {
+		entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
+		customSchemas[entry["name"].(string)] = []byte(entry["value"].(string))
+	}
+	if len(customSchemas) > 0 {
+		user.CustomSchemas = customSchemas
+	}
+
+	user.SshPublicKeys = userSSHs
 
 	userNamePrefix := "name.0"
 	userName := &directory.UserName{
@@ -574,6 +549,15 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		user.PosixAccounts = userPosixs
 	}
 
+	if d.HasChange("custom_schema") {
+		customSchemas := map[string]googleapi.RawMessage{}
+		for i := 0; i < d.Get("custom_schema.#").(int); i++ {
+			entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
+			customSchemas[entry["name"].(string)] = []byte(entry["value"].(string))
+		}
+		user.CustomSchemas = customSchemas
+	}
+
 	userNamePrefix := "name.0"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
@@ -589,6 +573,9 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	var err error
 	err = retry(func() error {
 		updatedUser, err = config.directory.Users.Update(d.Id(), user).Do()
+		if e, ok := err.(*googleapi.Error); ok {
+			panic(e.Body)
+		}
 		return err
 	})
 
@@ -639,6 +626,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", flattenUserName(user.Name))
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
+	d.Set("custom_schemas", user.CustomSchemas)
 
 	return nil
 }
