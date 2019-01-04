@@ -9,6 +9,10 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
+// userAttrMappings is a mapping of top level keys in a gsuite_user_attributes
+// data source to a struct defining type of of value expected as input and
+// whether or not the value is a list. See also userAttrMapping.schema() which
+// constructs the underlying *schema.Schema at runtime.
 var userAttrMappings = map[string]*userAttrMapping{
 	"string":   {schema.TypeString, false},
 	"strings":  {schema.TypeString, true},
@@ -84,6 +88,7 @@ func (e *entry) MarshalJSON() ([]byte, error) {
 
 func dataUserAttributesRead(d *schema.ResourceData, _ interface{}) error {
 	customAttributes := map[string]interface{}{}
+
 	for name, mapping := range userAttrMappings {
 		if mapping.list {
 			if statements, ok := d.GetOk(name); ok {
