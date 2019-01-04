@@ -2,12 +2,13 @@ package gsuite
 
 import (
 	"fmt"
-	"google.golang.org/api/googleapi"
 	"log"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/pkg/errors"
 	directory "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/googleapi"
 )
 
 func flattenUserName(name *directory.UserName) map[string]interface{} {
@@ -574,7 +575,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		updatedUser, err = config.directory.Users.Update(d.Id(), user).Do()
 		if e, ok := err.(*googleapi.Error); ok {
-			panic(e.Body)
+			return errors.Wrap(e, e.Body)
 		}
 		return err
 	})
