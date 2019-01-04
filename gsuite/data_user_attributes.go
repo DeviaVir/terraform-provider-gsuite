@@ -13,7 +13,7 @@ func dataUserAttributes() *schema.Resource {
 		Read: dataUserAttributesRead,
 		Schema: map[string]*schema.Schema{
 			"json": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"string": {
@@ -95,8 +95,7 @@ func dataUserAttributesRead(d *schema.ResourceData, meta interface{}) error {
 			for _, value := range stmt["value"].([]interface{}) {
 				values = append(values, &struct {
 					Value string `json:"value"`
-					Type string `json:"type"`
-				}{Value: value.(string), Type: "custom"})
+				}{Value: value.(string)})
 			}
 			customAttributes[stmt["name"].(string)] = values
 		}
