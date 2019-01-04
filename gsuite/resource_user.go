@@ -682,6 +682,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("name", flattenUserName(id.Name))
 	d.Set("posix_accounts", id.PosixAccounts)
 	d.Set("ssh_public_keys", id.SshPublicKeys)
+	d.Set("custom_schemas", id.CustomSchemas)
 
 	return []*schema.ResourceData{d}, nil
 }
