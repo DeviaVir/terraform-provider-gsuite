@@ -2,102 +2,108 @@ package gsuite
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
+var userAttrMappings = map[string]*userAttrMapping{
+	"string":   {schema.TypeString, false},
+	"strings":  {schema.TypeString, true},
+	"bool":     {schema.TypeBool, false},
+	"bools":    {schema.TypeBool, true},
+	"integer":  {schema.TypeInt, false},
+	"integers": {schema.TypeInt, true},
+	"double":   {schema.TypeFloat, false},
+	"doubles":  {schema.TypeFloat, true},
+	"date":     {schema.TypeString, false},
+	"dates":    {schema.TypeString, true},
+	"email":    {schema.TypeString, false},
+	"emails":   {schema.TypeString, true},
+	"phone":    {schema.TypeString, false},
+	"phones":   {schema.TypeString, true},
+}
+
+type userAttrMapping struct {
+	valueType schema.ValueType
+	list      bool
+}
+
+func (s *userAttrMapping) schema() *schema.Schema {
+	value := &schema.Schema{Required: true, Type: s.valueType}
+	if s.list {
+		value.Type = schema.TypeList
+		value.Elem = &schema.Schema{Type: s.valueType}
+	}
+	return &schema.Schema{
+		Type:     schema.TypeSet,
+		Optional: true,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"name": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				"value": value,
+			},
+		},
+	}
+}
+
 func dataUserAttributes() *schema.Resource {
-	return &schema.Resource{
+	resource := &schema.Resource{
 		Read: dataUserAttributesRead,
 		Schema: map[string]*schema.Schema{
 			"json": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"string": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"value": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-					},
-				},
-			},
-			"bool": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"value": {
-							Type:     schema.TypeBool,
-							Required: true,
-						},
-					},
-				},
-			},
-			"strings": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"value": {
-							Type:     schema.TypeList,
-							Required: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-						},
-					},
-				},
-			},
 		},
 	}
+	for name, mapping := range userAttrMappings {
+		resource.Schema[name] = mapping.schema()
+	}
+	return resource
 }
 
-func dataUserAttributesRead(d *schema.ResourceData, meta interface{}) error {
+type entry struct {
+	Value interface{} `json:"value"`
+}
+
+// MarshalJSON converts the interface value to a reasonable string
+// representation. Without this some types of values (basically anything not a string)
+// ends up without quotes around it. While Google's directory SDK does allow you
+// to pass in some types of values without quotes other types, like floats, require
+// strings. Placing quotes around *all* types of values provides the most
+// consistent behavior overall.
+func (e *entry) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`{"value":"%v"}`, e.Value)), nil
+}
+
+func dataUserAttributesRead(d *schema.ResourceData, _ interface{}) error {
 	customAttributes := map[string]interface{}{}
-
-	if statements, ok := d.GetOk("string"); ok {
-		for _, statement := range statements.(*schema.Set).List() {
-			stmt := statement.(map[string]interface{})
-			customAttributes[stmt["name"].(string)] = stmt["value"].(string)
-		}
-	}
-
-	if statements, ok := d.GetOk("bool"); ok {
-		for _, statement := range statements.(*schema.Set).List() {
-			stmt := statement.(map[string]interface{})
-			customAttributes[stmt["name"].(string)] = stmt["value"].(bool)
-		}
-	}
-
-	if statements, ok := d.GetOk("strings"); ok {
-		for _, statement := range statements.(*schema.Set).List() {
-			stmt := statement.(map[string]interface{})
-			var values []interface{}
-			for _, value := range stmt["value"].([]interface{}) {
-				values = append(values, &struct {
-					Value string `json:"value"`
-				}{Value: value.(string)})
+	for name, mapping := range userAttrMappings {
+		if mapping.list {
+			if statements, ok := d.GetOk(name); ok {
+				for _, statement := range statements.(*schema.Set).List() {
+					stmt := statement.(map[string]interface{})
+					var values []*entry
+					for _, value := range stmt["value"].([]interface{}) {
+						values = append(values, &entry{Value: value})
+					}
+					customAttributes[stmt["name"].(string)] = values
+				}
 			}
-			customAttributes[stmt["name"].(string)] = values
+			continue
+		}
+
+		if statements, ok := d.GetOk(name); ok {
+			for _, statement := range statements.(*schema.Set).List() {
+				stmt := statement.(map[string]interface{})
+				customAttributes[stmt["name"].(string)] = stmt["value"]
+			}
 		}
 	}
 
