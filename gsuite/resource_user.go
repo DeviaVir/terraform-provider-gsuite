@@ -627,7 +627,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", flattenUserName(user.Name))
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
-	d.Set("custom_schemas", user.CustomSchemas)
+	d.Set("custom_schema", user.CustomSchemas)
 
 	return nil
 }
@@ -683,7 +683,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("name", flattenUserName(id.Name))
 	d.Set("posix_accounts", id.PosixAccounts)
 	d.Set("ssh_public_keys", id.SshPublicKeys)
-	d.Set("custom_schemas", id.CustomSchemas)
+	d.Set("custom_schema", id.CustomSchemas)
 
 	return []*schema.ResourceData{d}, nil
 }
