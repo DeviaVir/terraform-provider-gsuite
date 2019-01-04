@@ -58,7 +58,7 @@ func resourceUserSchema() *schema.Resource {
 							Required: true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
-									"BOOL", "DATA", "DOUBLE", "EMAIL",
+									"BOOL", "DATE", "DOUBLE", "EMAIL",
 									"INT64", "PHONE", "STRING",
 								},
 								false,
