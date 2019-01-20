@@ -17,6 +17,13 @@ resource "gsuite_user_schema" "details" {
   }
 }
 
+data "gsuite_user_attributes" "details" {
+  phone {
+    name  = "internal-phone"
+    value = "555-555-5555"
+  }
+}
+
 // A data resource that defines full schema that contains all field types mentioned above. Not very
 // interesting but can be used for testing changes to the terraform provider. Note,
 // the reason we
@@ -187,7 +194,7 @@ data "gsuite_user_attributes" "test" {
 resource "gsuite_user" "user" {
   // depends_on is required. Otherwise changes to the schema won't be applied
   // before we update this resource.
-  depends_on = ["gsuite_user_schema.test"]
+  depends_on = ["gsuite_user_schema.test", "gsuite_user_schema.details"]
 
   primary_email = "flast@example.com"
 
@@ -195,6 +202,18 @@ resource "gsuite_user" "user" {
     given_name  = "First"
     family_name = "Last"
   }
+
+  //
+  //                         NOTICE
+  // If you get a and error when applying schema changes such as:
+  //
+  //   `googleapi: Error 400: Invalid Input: custom_schema, invalid
+  //
+  // The most likely cause is you are attemping to update a schema
+  // with value(s) it does not support. For example if you apply
+  // data.gsuite_user_attributes.test to the `additional-details`
+  // custom_schema below you'll get the error above as a result.
+  //
 
   // Set attributes on the user for the `test-schema` custom schema.
   custom_schema {
@@ -205,6 +224,6 @@ resource "gsuite_user" "user" {
   // Set attributes on the user for the `additional-details` custom schema.
   custom_schema {
     name  = "additional-details"
-    value = "${data.gsuite_user_attributes.test.json}"
+    value = "${data.gsuite_user_attributes.details.json}"
   }
 }
