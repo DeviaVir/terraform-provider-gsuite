@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
-
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
@@ -21,7 +20,7 @@ func resourceGroup() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"email": &schema.Schema{
+			"email": {
 				Type:     schema.TypeString,
 				Required: true,
 				StateFunc: func(val interface{}) string {
@@ -29,33 +28,33 @@ func resourceGroup() *schema.Resource {
 				},
 			},
 
-			"aliases": &schema.Schema{
+			"aliases": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"description": &schema.Schema{
+			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"direct_members_count": &schema.Schema{
+			"direct_members_count": {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
 
-			"admin_created": &schema.Schema{
+			"admin_created": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"non_editable_aliases": &schema.Schema{
+			"non_editable_aliases": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -174,7 +173,7 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, v := range aliasesResponse.Aliases {
-		c, ok := v.(map[string]interface {})
+		c, ok := v.(map[string]interface{})
 		if ok {
 			alias := c["alias"].(string)
 			log.Printf("[DEBUG] Removing alias: %s", alias)

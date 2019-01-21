@@ -2,11 +2,13 @@ package gsuite
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"runtime"
+	"strings"
 
-	"encoding/json"
 	"github.com/hashicorp/terraform/helper/logging"
 	"github.com/hashicorp/terraform/helper/pathorcontents"
 	"github.com/hashicorp/terraform/terraform"
@@ -14,8 +16,6 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 	directory "google.golang.org/api/admin/directory/v1"
-	"net/http"
-	"strings"
 )
 
 var defaultOauthScopes = []string{
@@ -94,7 +94,6 @@ func (c *Config) loadAndValidate() error {
 	client.Transport = logging.NewTransport("Google", client.Transport)
 	userAgent := fmt.Sprintf("(%s %s) Terraform/%s",
 		runtime.GOOS, runtime.GOARCH, terraform.VersionString())
-
 
 	// Create the directory service.
 	directorySvc, err := directory.New(client)

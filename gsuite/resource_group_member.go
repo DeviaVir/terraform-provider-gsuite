@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
-
 	directory "google.golang.org/api/admin/directory/v1"
 )
 

@@ -58,7 +58,7 @@ func resourceUserSchema() *schema.Resource {
 							Required: true,
 							ValidateFunc: validation.StringInSlice(
 								[]string{
-									"BOOL", "DATA", "DOUBLE", "EMAIL",
+									"BOOL", "DATE", "DOUBLE", "EMAIL",
 									"INT64", "PHONE", "STRING",
 								},
 								false,
@@ -276,33 +276,41 @@ func getUserSchemaFieldSpecs(d *schema.ResourceData) ([]*directory.SchemaFieldSp
 			)
 			switch spec.FieldType {
 			case "DOUBLE":
-				minValue, err = strconv.ParseFloat(values["min_value"].(string), 64)
-				if err != nil {
-					return nil, err
+				if v, ok := values["min_value"]; ok {
+					minValue, err = strconv.ParseFloat(v.(string), 64)
+					if err != nil {
+						return nil, err
+					}
 				}
 
-				maxValue, err = strconv.ParseFloat(values["max_value"].(string), 64)
-				if err != nil {
-					return nil, err
+				if v, ok := values["max_value"]; ok {
+					maxValue, err = strconv.ParseFloat(v.(string), 64)
+					if err != nil {
+						return nil, err
+					}
 				}
 
 			case "INT64":
-				min, err := strconv.Atoi(values["min_value"].(string))
-				if err != nil {
-					return nil, err
+				if v, ok := values["min_value"]; ok {
+					integer, err := strconv.Atoi(v.(string))
+					if err != nil {
+						return nil, err
+					}
+					minValue = float64(integer)
 				}
-				minValue = float64(min)
-
-				max, err := strconv.Atoi(values["max_value"].(string))
-				if err != nil {
-					return nil, err
+				if v, ok := values["max_value"]; ok {
+					integer, err := strconv.Atoi(v.(string))
+					if err != nil {
+						return nil, err
+					}
+					maxValue = float64(integer)
 				}
-				maxValue = float64(max)
 			}
-
-			spec.NumericIndexingSpec = &directory.SchemaFieldSpecNumericIndexingSpec{
-				MinValue: minValue,
-				MaxValue: maxValue,
+			if minValue > 0 || maxValue > 0 {
+				spec.NumericIndexingSpec = &directory.SchemaFieldSpecNumericIndexingSpec{
+					MinValue: minValue,
+					MaxValue: maxValue,
+				}
 			}
 		}
 

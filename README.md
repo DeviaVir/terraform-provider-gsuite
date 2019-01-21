@@ -25,6 +25,12 @@ provider "gsuite" {
 }
 ```
 
+**NOTE** If you are creating or modifying schemas and custom user attributes
+you will need the following additional scope:
+
+    https://www.googleapis.com/auth/admin.directory.userschema
+
+
 ### Using a service account
 
 Service accounts are great for automated workflows.
