@@ -205,7 +205,7 @@ resource "gsuite_user" "user" {
 
   //
   //                         NOTICE
-  // If you get a and error when applying schema changes such as:
+  // If you get an error when applying schema changes such as:
   //
   //   `googleapi: Error 400: Invalid Input: custom_schema, invalid
   //
@@ -220,7 +220,6 @@ resource "gsuite_user" "user" {
     name  = "test-schema"
     value = "${data.gsuite_user_attributes.test.json}"
   }
-
   // Set attributes on the user for the `additional-details` custom schema.
   custom_schema {
     name  = "additional-details"
