@@ -173,14 +173,13 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 	}
 
 	cfgMap := m(cfgMembers)
-	log.Println("[INFO] Members in cfg: ", cfgMap)
+	log.Println("[DEBUG] Members in cfg: ", cfgMap)
 	apiMap := m(apiMembers)
-	log.Println("[INFO] Member in API: ", apiMap)
+	log.Println("[DEBUG] Member in API: ", apiMap)
 
 	var cfgRole, apiRole string
 
 	for k, apiMember := range apiMap {
-		log.Printf("[INFO] Member in API: %s", k)
 		if cfgMember, ok := cfgMap[k]; !ok {
 			// The member in the API is not in the config; disable it.
 			log.Printf("[DEBUG] Member in API not in config. Disabling it: %s", k)
