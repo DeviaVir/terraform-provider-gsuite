@@ -268,12 +268,12 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 
 	// Check if the email address belongs to a user, or to a group
 	// we need to make sure, because we need to use different logic
-	var isGroup = false
+	var isGroup = true
 	err = retry(func() error {
 		_, err := config.directory.Groups.Get(email).Do()
 		if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == 404 {
-			isGroup = true
-			log.Printf("[DEBUG] Setting isGroup to true for %s after getting a 404", email)
+			isGroup = false
+			log.Printf("[DEBUG] Setting isGroup to false for %s after getting a 404", email)
 			return nil
 		}
 		return err
@@ -284,14 +284,23 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 			return fmt.Errorf("Error creating groupMember (%s): nested groups should be role MEMBER", email)
 		}
 
+		var isGroupMember = true
+
 		// Grab the group as a directory member of the current group
 		err = retry(func() error {
 			_, err := config.directory.Members.Get(groupEmail, email).Do()
+
+			if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == 404 {
+				isGroupMember = false
+				log.Printf("[DEBUG] Setting isGroupMember to false for %s after getting a 404", email)
+				return nil
+			}
+
 			return err
 		})
 
 		// Based on the err return, either add as a new member, or update
-		if err != nil {
+		if isGroupMember == false {
 			var createdGroupMember *directory.Member
 			err = retry(func() error {
 				createdGroupMember, err = config.directory.Members.Insert(groupEmail, groupMember).Do()
