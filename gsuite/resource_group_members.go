@@ -10,7 +10,7 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
-var schemaMemberEmailChangeForceNewFalse = map[string]*schema.Schema{
+var schemaGroupMembersEmail = map[string]*schema.Schema{
 	"email": &schema.Schema{
 		Type:     schema.TypeString,
 		Required: true,
@@ -21,7 +21,7 @@ var schemaMemberEmailChangeForceNewFalse = map[string]*schema.Schema{
 	},
 }
 
-var schemaMemberGroupMembers = mergeSchemas(schemaMember, schemaMemberEmailChangeForceNewFalse)
+var schemaGroupMembers = mergeSchemas(schemaMember, schemaGroupMembersEmail)
 
 func resourceGroupMembers() *schema.Resource {
 	return &schema.Resource{
@@ -46,7 +46,7 @@ func resourceGroupMembers() *schema.Resource {
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem: &schema.Resource{
-					Schema: schemaMemberGroupMembers,
+					Schema: schemaGroupMembers,
 				},
 			},
 		},
