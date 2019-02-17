@@ -10,6 +10,19 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+var schemaMemberEmailChangeForceNewFalse = map[string]*schema.Schema{
+	"email": &schema.Schema{
+		Type:     schema.TypeString,
+		Required: true,
+		ForceNew: false,
+		StateFunc: func(val interface{}) string {
+			return strings.ToLower(val.(string))
+		},
+	},
+}
+
+var schemaMemberGroupMembers = mergeSchemas(schemaMember, schemaMemberEmailChangeForceNewFalse)
+
 func resourceGroupMembers() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceGroupMembersCreate,
@@ -33,10 +46,7 @@ func resourceGroupMembers() *schema.Resource {
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem: &schema.Resource{
-					Schema: schemaMember,
-				},
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return strings.ToLower(strings.Trim(old, `"`)) == strings.ToLower(strings.Trim(new, `"`))
+					Schema: schemaMemberGroupMembers,
 				},
 			},
 		},
@@ -163,13 +173,17 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 	}
 
 	cfgMap := m(cfgMembers)
+	log.Println("[INFO] Members in cfg: ", cfgMap)
 	apiMap := m(apiMembers)
+	log.Println("[INFO] Member in API: ", apiMap)
 
 	var cfgRole, apiRole string
 
 	for k, apiMember := range apiMap {
+		log.Printf("[INFO] Member in API: %s", k)
 		if cfgMember, ok := cfgMap[k]; !ok {
 			// The member in the API is not in the config; disable it.
+			log.Printf("[DEBUG] Member in API not in config. Disabling it: %s", k)
 			err := deleteMember(k, gid, config)
 			if err != nil {
 				return err
