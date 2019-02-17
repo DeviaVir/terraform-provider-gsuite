@@ -268,15 +268,16 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 
 	// Check if the email address belongs to a user, or to a group
 	// we need to make sure, because we need to use different logic
-	var isGroup bool
+	var isGroup = false
 	err = retry(func() error {
 		_, err := config.directory.Groups.Get(email).Do()
+		if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == 404 {
+			isGroup = true
+			log.Printf("[DEBUG] Setting isGroup to true for %s after getting a 404", email)
+			return nil
+		}
 		return err
 	})
-	isGroup = true
-	if err != nil {
-		isGroup = false
-	}
 
 	if isGroup == true {
 		if role != "MEMBER" {
