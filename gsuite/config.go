@@ -22,6 +22,7 @@ var defaultOauthScopes = []string{
 	directory.AdminDirectoryGroupScope,
 	directory.AdminDirectoryUserScope,
 	directory.AdminDirectoryUserschemaScope,
+	directory.AdminDirectoryDomainScope,
 }
 
 // Config is the structure used to instantiate the GSuite provider.
@@ -31,6 +32,8 @@ type Config struct {
 	// therefore the service account needs to impersonate one of those users to access the Admin SDK Directory API.
 	// See https://developers.google.com/admin-sdk/directory/v1/guides/delegation
 	ImpersonatedUserEmail string
+
+	CustomerId string
 
 	OauthScopes []string
 

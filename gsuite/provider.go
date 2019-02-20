@@ -33,6 +33,10 @@ func Provider() *schema.Provider {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
+			"customer_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"gsuite_user_attributes": dataUserAttributes(),
@@ -43,6 +47,7 @@ func Provider() *schema.Provider {
 			"gsuite_user_schema":   resourceUserSchema(),
 			"gsuite_group_member":  resourceGroupMember(),
 			"gsuite_group_members": resourceGroupMembers(),
+			"gsuite_domain": 				resourceDomain(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
@@ -59,7 +64,10 @@ func oauthScopesFromConfigOrDefault(oauthScopesSet *schema.Set) []string {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	var impersonatedUserEmail string
+	var customerId string
+
 	credentials := d.Get("credentials").(string)
+
 	if v, ok := d.GetOk("impersonated_user_email"); ok {
 		impersonatedUserEmail = v.(string)
 	} else {
@@ -67,11 +75,19 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 			impersonatedUserEmail = os.Getenv("IMPERSONATED_USER_EMAIL")
 		}
 	}
+
+	if v, ok := d.GetOk("customer_id"); ok {
+		customerId = v.(string)
+	} else {
+		log.Printf("[WARN] No Customer ID provided. It is required for some resources.")
+	}
+
 	oauthScopes := oauthScopesFromConfigOrDefault(d.Get("oauth_scopes").(*schema.Set))
 	config := Config{
 		Credentials:           credentials,
 		ImpersonatedUserEmail: impersonatedUserEmail,
 		OauthScopes:           oauthScopes,
+		CustomerId:            customerId,
 	}
 
 	if err := config.loadAndValidate(); err != nil {
