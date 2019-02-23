@@ -14,7 +14,7 @@ func resourceDomain() *schema.Resource {
 		Create: resourceDomainCreate,
 		Read:   resourceDomainRead,
 		Delete: resourceDomainDelete,
-		Update: resourceDomainUpdate,
+		// There is no update method
 
 		Schema: map[string]*schema.Schema{
 
@@ -23,15 +23,10 @@ func resourceDomain() *schema.Resource {
 				Computed: true,
 			},
 
-			"domain_aliases": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-
 			"domain_name": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 				StateFunc: func(val interface{}) string {
 					return strings.ToLower(val.(string))
 				},
@@ -41,17 +36,12 @@ func resourceDomain() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-
-			"is_primary": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-
 		},
 	}
 }
 
 func resourceDomainCreate(d *schema.ResourceData, meta interface{}) error {
+
 	config := meta.(*Config)
 
 	domain := &directory.Domains{}
@@ -77,13 +67,14 @@ func resourceDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	// There is no id as such for a Domain resource, therefore we use
 	// DomainName as unique identifier.
 	d.SetId(createdDomain.DomainName)
+	d.Set("domain_name", domain.DomainName)
 
 	log.Printf("[INFO] Created domain: %s", createdDomain.DomainName)
 	return resourceDomainRead(d, meta)
 }
 
-
 func resourceDomainRead(d *schema.ResourceData, meta interface{}) error {
+
 	config := meta.(*Config)
 
 	customerId := config.CustomerId
@@ -108,15 +99,12 @@ func resourceDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(domain.DomainName)
 	d.Set("domain_name", domain.DomainName)
-	d.Set("domain_aliases", domain.DomainAliases)
-	d.Set("etag", domain.Etag)
-	d.Set("is_primary", domain.IsPrimary)
-	d.Set("creation_time", domain.CreationTime)
 
 	return nil
 }
 
 func resourceDomainDelete(d *schema.ResourceData, meta interface{}) error {
+
 	config := meta.(*Config)
 
 	customerId := config.CustomerId
@@ -141,10 +129,4 @@ func resourceDomainDelete(d *schema.ResourceData, meta interface{}) error {
 	d.SetId("")
 
 	return nil
-}
-
-func resourceDomainUpdate(d *schema.ResourceData, meta interface{}) error {
-		// There is no update method in https://developers.google.com/admin-sdk/directory/v1/reference/domains,
-		// therefore returning an error message to the user.
-		return fmt.Errorf("There is no update method for gsuite_domain resource")
 }

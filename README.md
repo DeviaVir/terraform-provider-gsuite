@@ -79,17 +79,6 @@ https://www.googleapis.com/auth/admin.directory.user,
 Now that you have a credential that is allowed to the Admin SDK, you can use the
 G Suite provider.
 
-## Configuration
-
-Your G Suite Customer ID is required for some Admins SDK Directory APIs,
-therefore add also `customer_id` when initializing the provider.
-
-```
-provider "gsuite" {
-  customer_id = "xxxxxxxx"
-}
-```
-
 ## Installation
 
 1. Download the latest compiled binary from [GitHub releases](https://github.com/DeviaVir/terraform-provider-gsuite/releases).

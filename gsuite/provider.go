@@ -47,7 +47,7 @@ func Provider() *schema.Provider {
 			"gsuite_user_schema":   resourceUserSchema(),
 			"gsuite_group_member":  resourceGroupMember(),
 			"gsuite_group_members": resourceGroupMembers(),
-			"gsuite_domain": 				resourceDomain(),
+			"gsuite_domain":        resourceDomain(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
@@ -76,10 +76,15 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		}
 	}
 
+	// There shouldn't be the need to setup customer ID in the configuration,
+	// but leaving the possibility to specify it explictly.
+	// By default we use my_customer as customer ID, which means the API will use
+	// the G Suite customer ID associated with the impersonating account.
 	if v, ok := d.GetOk("customer_id"); ok {
 		customerId = v.(string)
 	} else {
-		log.Printf("[WARN] No Customer ID provided. It is required for some resources.")
+		log.Printf("[INFO] No Customer ID provided. Using my_customer.")
+		customerId = "my_customer"
 	}
 
 	oauthScopes := oauthScopesFromConfigOrDefault(d.Get("oauth_scopes").(*schema.Set))
