@@ -61,7 +61,6 @@ define make-xc-target
 			--dns 1.0.0.1 \
 			--dns 8.8.8.8 \
 			--dns 8.4.4.8 \
-			--user 1000 \
 			--rm \
 			--volume="${CURRENT_DIR}:/go/src/${PROJECT}" \
 			--workdir="/go/src/${PROJECT}" \
