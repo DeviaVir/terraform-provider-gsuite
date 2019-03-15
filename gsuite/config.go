@@ -32,6 +32,8 @@ type Config struct {
 	// See https://developers.google.com/admin-sdk/directory/v1/guides/delegation
 	ImpersonatedUserEmail string
 
+	CustomerId string
+
 	OauthScopes []string
 
 	directory *directory.Service

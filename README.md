@@ -1,6 +1,6 @@
-# Terraform GSuite Provider
+# Terraform G Suite Provider
 
-This is a terraform provider for managing GSuite (Admin SDK) resources on Google
+This is a terraform provider for managing G Suite (Admin SDK) resources on Google
 
 ## Authentication
 
@@ -77,7 +77,7 @@ https://www.googleapis.com/auth/admin.directory.user,
 ```
 
 Now that you have a credential that is allowed to the Admin SDK, you can use the
-GSuite provider.
+G Suite provider.
 
 ## Installation
 
