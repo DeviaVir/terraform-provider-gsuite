@@ -1,12 +1,3 @@
-
 [[constraint]]
-  name = "github.com/pkg/errors"
-  version = "0.8.0"
-
-[[constraint]]
-  name = "golang.org/x/oauth2"
-  revision = "a032972e28060ca4f5644acffae3dfc268cc09db"
-
-[[constraint]]
-  name = "google.golang.org/api"
-  revision = "65a46cafb132eff435c7d1e0f439cc73c8eebb85"
+  name = "github.com/hashicorp/terraform"
+  version ="^0.12.0-beta1"
