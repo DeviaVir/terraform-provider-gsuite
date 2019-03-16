@@ -134,13 +134,13 @@ func createOrUpdateGroupMembers(d *schema.ResourceData, meta interface{}) (strin
 	// Get members from API
 	apiMembers, err := getAPIMembers(groupEmail, config)
 	if err != nil {
-		return groupEmail, fmt.Errorf("Error updating memberships: %v", err)
+		return groupEmail, fmt.Errorf("[ERR] Error updating memberships: %v", err)
 	}
 	// This call removes any members that aren't defined in cfgMembers,
 	// and adds all of those that are
 	err = reconcileMembers(d, cfgMembers, membersToCfg(apiMembers), config, groupEmail)
 	if err != nil {
-		return groupEmail, fmt.Errorf("Error updating memberships: %v", err)
+		return groupEmail, fmt.Errorf("[ERR] Error updating memberships: %v", err)
 	}
 
 	return groupEmail, nil
@@ -185,7 +185,7 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 				}
 
 				if cfgRole != "MEMBER" {
-					return fmt.Errorf("Error updating groupMember (%s): nested groups should be role MEMBER", cfgMember["email"].(string))
+					return fmt.Errorf("[ERR] Error updating groupMember (%s): nested groups should be role MEMBER", cfgMember["email"].(string))
 				}
 
 				var updatedGroupMember *directory.Member
@@ -199,7 +199,7 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 				})
 
 				if err != nil {
-					return fmt.Errorf("Error updating groupMember: %s", err)
+					return fmt.Errorf("[ERR] Error updating groupMember: %s", err)
 				}
 
 				log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
@@ -267,7 +267,7 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 
 	if isGroup == true {
 		if role != "MEMBER" {
-			return fmt.Errorf("Error creating groupMember (%s): nested groups should be role MEMBER", email)
+			return fmt.Errorf("[ERR] Error creating groupMember (%s): nested groups should be role MEMBER", email)
 		}
 
 		// Grab the group as a directory member of the current group
@@ -284,7 +284,7 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 				return err
 			})
 			if err != nil {
-				return fmt.Errorf("Error creating groupMember: %s, %s", err, email)
+				return fmt.Errorf("[ERR] Error creating groupMember: %s, %s", err, email)
 			}
 			log.Printf("[INFO] Created groupMember: %s", createdGroupMember.Email)
 		} else {
@@ -294,7 +294,7 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 				return err
 			})
 			if err != nil {
-				return fmt.Errorf("Error updating groupMember: %s, %s", err, email)
+				return fmt.Errorf("[ERR] Error updating groupMember: %s, %s", err, email)
 			}
 			log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
 		}
@@ -314,7 +314,7 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 			// When a user does not exist, the API returns a 400 "memberKey, required"
 			// Returning a friendly message
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "required" && gerr.Code == 400) {
-				return fmt.Errorf("error adding groupMember %s, please make sure the user exists beforehand", email)
+				return fmt.Errorf("[ERR] Error adding groupMember %s, please make sure the user exists beforehand", email)
 			}
 			return err
 		})
@@ -329,7 +329,7 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 				return err
 			})
 			if err != nil {
-				return fmt.Errorf("Error updating groupMember: %s, %s", err, email)
+				return fmt.Errorf("[ERR] Error updating groupMember: %s, %s", err, email)
 			}
 			log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
 		} else {
@@ -347,7 +347,7 @@ func createGroupMember(groupMember *directory.Member, groupEmail string, config 
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("Error creating groupMember: %s, %s", err, groupMember.Email)
+		return fmt.Errorf("[ERR] Error creating groupMember: %s, %s", err, groupMember.Email)
 	}
 	log.Printf("[INFO] Created groupMember: %s", createdGroupMember.Email)
 
@@ -361,7 +361,7 @@ func deleteMember(email, groupEmail string, config *Config) (err error) {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error deleting member: %s", err)
+		return fmt.Errorf("[ERR] Error deleting member: %s", err)
 	}
 	return nil
 }
@@ -379,7 +379,7 @@ func resourceGroupMembersImporter(d *schema.ResourceData, meta interface{}) ([]*
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Error fetching group. Make sure the group exists: %s ", err)
+		return nil, fmt.Errorf("[ERR] Error fetching group. Make sure the group exists: %s ", err)
 	}
 
 	d.SetId(group.Email)
