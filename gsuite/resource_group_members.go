@@ -10,6 +10,19 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+var schemaGroupMembersEmail = map[string]*schema.Schema{
+	"email": &schema.Schema{
+		Type:     schema.TypeString,
+		Required: true,
+		ForceNew: false,
+		StateFunc: func(val interface{}) string {
+			return strings.ToLower(val.(string))
+		},
+	},
+}
+
+var schemaGroupMembers = mergeSchemas(schemaMember, schemaGroupMembersEmail)
+
 func resourceGroupMembers() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceGroupMembersCreate,
@@ -33,10 +46,7 @@ func resourceGroupMembers() *schema.Resource {
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem: &schema.Resource{
-					Schema: schemaMember,
-				},
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return strings.ToLower(strings.Trim(old, `"`)) == strings.ToLower(strings.Trim(new, `"`))
+					Schema: schemaGroupMembers,
 				},
 			},
 		},
@@ -163,13 +173,16 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 	}
 
 	cfgMap := m(cfgMembers)
+	log.Println("[DEBUG] Members in cfg: ", cfgMap)
 	apiMap := m(apiMembers)
+	log.Println("[DEBUG] Member in API: ", apiMap)
 
 	var cfgRole, apiRole string
 
 	for k, apiMember := range apiMap {
 		if cfgMember, ok := cfgMap[k]; !ok {
 			// The member in the API is not in the config; disable it.
+			log.Printf("[DEBUG] Member in API not in config. Disabling it: %s", k)
 			err := deleteMember(k, gid, config)
 			if err != nil {
 				return err
@@ -255,29 +268,39 @@ func upsertMember(email, groupEmail, role string, config *Config) error {
 
 	// Check if the email address belongs to a user, or to a group
 	// we need to make sure, because we need to use different logic
-	var isGroup bool
+	var isGroup = true
 	err = retry(func() error {
 		_, err := config.directory.Groups.Get(email).Do()
+		if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == 404 {
+			isGroup = false
+			log.Printf("[DEBUG] Setting isGroup to false for %s after getting a 404", email)
+			return nil
+		}
 		return err
 	})
-	isGroup = true
-	if err != nil {
-		isGroup = false
-	}
 
 	if isGroup == true {
 		if role != "MEMBER" {
 			return fmt.Errorf("[ERR] Error creating groupMember (%s): nested groups should be role MEMBER", email)
 		}
 
+		var isGroupMember = true
+
 		// Grab the group as a directory member of the current group
 		err = retry(func() error {
 			_, err := config.directory.Members.Get(groupEmail, email).Do()
+
+			if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == 404 {
+				isGroupMember = false
+				log.Printf("[DEBUG] Setting isGroupMember to false for %s after getting a 404", email)
+				return nil
+			}
+
 			return err
 		})
 
 		// Based on the err return, either add as a new member, or update
-		if err != nil {
+		if isGroupMember == false {
 			var createdGroupMember *directory.Member
 			err = retry(func() error {
 				createdGroupMember, err = config.directory.Members.Insert(groupEmail, groupMember).Do()
