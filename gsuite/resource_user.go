@@ -381,6 +381,16 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error creating user: %s", err)
 	}
 
+	// Try to read the user, retrying for 404's
+	err = retryNotFound(func() error {
+		user, err = config.directory.Users.Get(createdUser.Id).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("[ERR] Taking too long to create this user: %s", err)
+	}
+
 	d.SetId(createdUser.Id)
 	log.Printf("[INFO] Created user: %s", createdUser.PrimaryEmail)
 	return resourceUserRead(d, meta)

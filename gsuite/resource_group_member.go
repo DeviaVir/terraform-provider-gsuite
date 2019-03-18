@@ -78,7 +78,7 @@ func resourceGroupMember() *schema.Resource {
 func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	group := d.Get("group").(string)
+	group := strings.ToLower(d.Get("group").(string))
 
 	groupMember := &directory.Member{
 		Role:  strings.ToUpper(d.Get("role").(string)),
@@ -104,7 +104,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("error locating existing group members: %s", err)
+			return fmt.Errorf("[ERR] Error listing existing group members: %s", err)
 		}
 		var locatedGroupMember *directory.Member
 		for _, existingGroupMember := range existingGroupMembers.Members {
@@ -114,7 +114,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 		if locatedGroupMember == nil {
-			return fmt.Errorf("error locating existing group member %s", groupMember.Email)
+			return fmt.Errorf("[ERR] Error locating existing group member %s", groupMember.Email)
 		}
 		log.Printf("[INFO] found existing group member %s", locatedGroupMember.Email)
 
@@ -125,13 +125,23 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		})
 
 		if err != nil {
-			return fmt.Errorf("error updating existing group member: %s", err)
+			return fmt.Errorf("[ERR] Error updating existing group member: %s", err)
 		}
 		log.Printf("[INFO] Updated group member: %s", groupMember.Email)
 		d.SetId(locatedGroupMember.Id)
 	} else {
 		log.Printf("[INFO] Created group member: %s", createdGroupMember.Email)
 		d.SetId(createdGroupMember.Id)
+	}
+
+	// Try to read the group member, retrying for 404's
+	err = retryNotFound(func() error {
+		groupMember, err = config.directory.Members.Get(group, createdGroupMember.Id).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("[ERR] Taking too long to create this group member: %s", err)
 	}
 
 	return resourceGroupMemberRead(d, meta)
@@ -165,7 +175,7 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("error updating group member: %s", err)
+		return fmt.Errorf("[ERR] Error updating group member: %s", err)
 	}
 
 	log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
@@ -206,7 +216,7 @@ func resourceGroupMemberDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("Error deleting group member: %s", err)
+		return fmt.Errorf("[ERR] Error deleting group member: %s", err)
 	}
 
 	d.SetId("")
@@ -223,14 +233,14 @@ func resourceGroupMemberImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	}
 
 	if len(s) < 2 {
-		return nil, fmt.Errorf("import via [group]:[member email] or [group]/[member email]")
+		return nil, fmt.Errorf("[WARN] Import via [group]:[member email] or [group]/[member email]")
 	}
 	group, member := strings.ToLower(s[0]), strings.ToLower(s[1])
 
 	id, err := config.directory.Members.Get(group, member).Do()
 
 	if err != nil {
-		return nil, fmt.Errorf("error fetching member, make sure the member exists: %s ", err)
+		return nil, fmt.Errorf("[ERR] Error fetching member, make sure the member exists: %s ", err)
 	}
 
 	d.SetId(id.Id)
