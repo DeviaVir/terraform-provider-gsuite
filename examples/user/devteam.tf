@@ -1,14 +1,16 @@
 resource "gsuite_user" "developer" {
   # advise to set this field to true on creation, then false afterwards
-  change_password_next_login = false
+  change_password_next_login = true
 
   name {
     family_name = "Sillevis"
     given_name  = "Chase"
   }
 
-  # on creation this field is required
-  password = ""
+  # on creation this field is required, later during updates it is ignored;
+  # it is expected that the user and Google will handle passwords from there on
+  # out
+  password = "testtest123!"
 
   primary_email = "developer@sillevis.net"
 
@@ -17,6 +19,13 @@ resource "gsuite_user" "developer" {
     expiration_time_usec = "1549735670773"
   }
 
+  #
+  # WARN: on-create the posix account is ignored!
+  # trigger another apply when the account has been logged into and verified.
+  # posix accounts are not trivial to set up automatically, triggering this
+  # too many times may lead to all terraform created accounts to automatically
+  # be suspended for some time. Take care!
+  #
   # best to fill out all of these fields or face the consequences
   # might get 503 backend errors if you try to change this too often/fast
   posix_accounts {

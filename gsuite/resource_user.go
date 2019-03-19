@@ -309,49 +309,6 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	user.SshPublicKeys = userSSHs
 
-	userPosixs := []*directory.UserPosixAccount{}
-	posixCount := d.Get("posix_accounts.#").(int)
-	for i := 0; i < posixCount; i++ {
-		posixConfig := d.Get(fmt.Sprintf("posix_accounts.%d", i)).(map[string]interface{})
-		userPosix := &directory.UserPosixAccount{}
-
-		if posixConfig["gecos"] != "" {
-			log.Printf("[DEBUG] Setting posix %d gecos: %s", i, posixConfig["gecos"].(string))
-			userPosix.Gecos = posixConfig["gecos"].(string)
-		}
-		if posixConfig["gid"] != 0 {
-			log.Printf("[DEBUG] Setting posix %d gid: %d", i, uint64(posixConfig["gid"].(int)))
-			userPosix.Gid = uint64(posixConfig["gid"].(int))
-		}
-		if posixConfig["home_directory"] != "" {
-			log.Printf("[DEBUG] Setting posix %d home_directory: %s", i, posixConfig["home_directory"].(string))
-			userPosix.HomeDirectory = posixConfig["home_directory"].(string)
-		}
-		if posixConfig["system_id"] != "" {
-			log.Printf("[DEBUG] Setting posix %d system_id: %s", i, posixConfig["system_id"].(string))
-			userPosix.SystemId = posixConfig["system_id"].(string)
-		}
-		if posixConfig["shell"] != "" {
-			log.Printf("[DEBUG] Setting posix %d shell: %s", i, posixConfig["shell"].(string))
-			userPosix.Shell = posixConfig["shell"].(string)
-		}
-		if posixConfig["primary"] != "" {
-			log.Printf("[DEBUG] Setting posix %d primary: %t", i, posixConfig["primary"].(bool))
-			userPosix.Primary = posixConfig["primary"].(bool)
-		}
-		if posixConfig["uid"] != 0 {
-			log.Printf("[DEBUG] Setting posix %d uid: %d", i, uint64(posixConfig["uid"].(int)))
-			userPosix.Uid = uint64(posixConfig["uid"].(int))
-		}
-		if posixConfig["username"] != "" {
-			log.Printf("[DEBUG] Setting posix %d username: %s", i, posixConfig["username"].(string))
-			userPosix.Username = posixConfig["username"].(string)
-		}
-
-		userPosixs = append(userPosixs, userPosix)
-	}
-	user.PosixAccounts = userPosixs
-
 	customSchemas := map[string]googleapi.RawMessage{}
 	for i := 0; i < d.Get("custom_schema.#").(int); i++ {
 		entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
@@ -422,16 +379,16 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 			nullFields = append(nullFields, "primary_email")
 		}
 	}
-	if d.HasChange("password") {
-		if v, ok := d.GetOk("password"); ok {
-			log.Printf("[DEBUG] Updating user password: %s", d.Get("password").(string))
-			user.Password = v.(string)
-		} else {
-			log.Printf("[DEBUG] Removing user password")
-			user.Password = ""
-			nullFields = append(nullFields, "password")
-		}
-	}
+	//if d.HasChange("password") {
+	//	if v, ok := d.GetOk("password"); ok {
+	//		log.Printf("[DEBUG] Updating user password: %s", d.Get("password").(string))
+	//		user.Password = v.(string)
+	//	} else {
+	log.Printf("[DEBUG] Removing user password")
+	user.Password = ""
+	nullFields = append(nullFields, "password")
+	//	}
+	//}
 	if d.HasChange("hash_function") {
 		if v, ok := d.GetOk("hash_function"); ok {
 			log.Printf("[DEBUG] Updating user hash_function: %s", d.Get("hash_function").(string))
@@ -609,7 +566,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Get("name").(string)))
+		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Id()))
 	}
 
 	d.SetId(user.Id)
