@@ -20,11 +20,10 @@ resource "gsuite_user" "developer" {
   }
 
   #
-  # WARN: on-create the posix account is ignored!
-  # trigger another apply when the account has been logged into and verified.
-  # posix accounts are not trivial to set up automatically, triggering this
-  # too many times may lead to all terraform created accounts to automatically
-  # be suspended for some time. Take care!
+  # WARN: it is possible on-creation of a new account that the POSIX data is
+  # found to not be unique, and a 503 backend error is returned indefinitely.
+  # In that case, the account is created, but without the POSIX data. Simply
+  # update the POSIX data and terraform apply to update until it works.
   #
   # best to fill out all of these fields or face the consequences
   # might get 503 backend errors if you try to change this too often/fast
