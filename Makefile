@@ -19,7 +19,7 @@ GOVERSION := 1.11
 PROJECT := github.com/DeviaVir/terraform-provider-gsuite
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
 NAME := $(notdir $(PROJECT))
-VERSION := 0.1.16
+VERSION := 0.1.17
 EXTERNAL_TOOLS = \
 	github.com/golang/dep/cmd/dep
 

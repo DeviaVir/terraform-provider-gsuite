@@ -421,10 +421,9 @@ func userPosixCreate(d *schema.ResourceData, userID string, meta interface{}) er
 	}
 	user.Name = userName
 
-	var updatedUser *directory.User
 	var err error
 	err = retry(func() error {
-		updatedUser, err = config.directory.Users.Update(userID, user).Do()
+		_, err = config.directory.Users.Update(userID, user).Do()
 		if e, ok := err.(*googleapi.Error); ok {
 			return errors.Wrap(e, e.Body)
 		}

@@ -49,7 +49,7 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool) error {
 		}
 
 		// Deal with the broken API
-		if strings.Contains(fmt.Sprintf("%s", err), "Invalid Input: Bad request for ") && strings.Contains(fmt.Sprintf("%s", err), "\"code\":400") {
+		if strings.Contains(fmt.Sprintf("%s", err), "Invalid Input: Bad request for \"") && strings.Contains(fmt.Sprintf("%s", err), "\"code\":400") {
 			log.Printf("[DEBUG] Retrying invalid response from API")
 			return resource.RetryableError(err)
 		}
