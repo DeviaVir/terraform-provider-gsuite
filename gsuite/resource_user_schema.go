@@ -144,7 +144,7 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("[ERR] Error creating user schema: %s", err)
+		return fmt.Errorf("[ERROR] Error creating user schema: %s", err)
 	}
 
 	d.SetId(created.SchemaId)
@@ -215,7 +215,7 @@ func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("[ERR] Error updating user schema: %s", err)
+		return fmt.Errorf("[ERROR] Error updating user schema: %s", err)
 	}
 
 	log.Printf("[INFO] Updated schema: %s", updated.DisplayName)
@@ -234,7 +234,7 @@ func resourceUserSchemaImporter(d *schema.ResourceData, meta interface{}) ([]*sc
 
 	imported, err := config.directory.Schemas.Get(myCustomerID, d.Id()).Do()
 	if err != nil {
-		return nil, fmt.Errorf("[ERR] Error fetching schema. Make sure the schema exists: %s ", err)
+		return nil, fmt.Errorf("[ERROR] Error fetching schema. Make sure the schema exists: %s ", err)
 	}
 
 	d.SetId(imported.SchemaId)

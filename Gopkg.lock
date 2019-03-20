@@ -664,7 +664,7 @@
   version = "v0.3.0"
 
 [[projects]]
-  digest = "1:7873bd40db14885e3c790a4134341e998abf3d83d0872a93613f765025903026"
+  digest = "1:34f4df8cf5e5b87724ee8243dd04f5b9ce04d165447facae071c5096ebc85346"
   name = "google.golang.org/api"
   packages = [
     "admin/directory/v1",
@@ -680,7 +680,8 @@
     "transport/http/internal/propagation",
   ]
   pruneopts = ""
-  revision = "65a46cafb132eff435c7d1e0f439cc73c8eebb85"
+  revision = "e742f5a8defa1f9f5d723dfa04c962e680dc33f0"
+  version = "v0.2.0"
 
 [[projects]]
   digest = "1:bc09e719c4e2a15d17163f5272d9a3131c45d77542b7fdc53ff518815bc19ab3"

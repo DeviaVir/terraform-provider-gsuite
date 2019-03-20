@@ -309,6 +309,68 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	user.SshPublicKeys = userSSHs
 
+	customSchemas := map[string]googleapi.RawMessage{}
+	for i := 0; i < d.Get("custom_schema.#").(int); i++ {
+		entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
+		customSchemas[entry["name"].(string)] = []byte(entry["value"].(string))
+	}
+	if len(customSchemas) > 0 {
+		user.CustomSchemas = customSchemas
+	}
+
+	user.SshPublicKeys = userSSHs
+
+	userNamePrefix := "name.0"
+	userName := &directory.UserName{
+		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
+		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
+	}
+	user.Name = userName
+
+	var createdUser *directory.User
+	var err error
+	err = retry(func() error {
+		createdUser, err = config.directory.Users.Insert(user).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("Error creating user: %s", err)
+	}
+
+	// Try to read the user, retrying for 404's
+	err = retryNotFound(func() error {
+		user, err = config.directory.Users.Get(createdUser.Id).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("[ERROR] Taking too long to create this user: %s", err)
+	}
+
+	if user.Suspended == false || user.SuspensionReason != "" {
+		log.Printf("[ERROR] Your newly created user has been automatically suspended by Google: %s", createdUser.PrimaryEmail)
+		log.Printf("[ERROR] Simply log in to the account, verify and accept the terms to unsuspend the account.")
+	}
+
+	// Now set POSIX data, after the account has been created.
+	err = userPosixCreate(d, createdUser.Id, meta)
+
+	if err != nil {
+		log.Printf("[ERROR] Failed to create POSIX data! The user has been created but the terraform operation failed: %s", err)
+		log.Printf("[ERROR] Not failing on this operation, your POSIX data has not been set. A next apply will retry.")
+	}
+
+	d.SetId(createdUser.Id)
+	log.Printf("[INFO] Created user: %s", createdUser.PrimaryEmail)
+	return resourceUserRead(d, meta)
+}
+
+func userPosixCreate(d *schema.ResourceData, userID string, meta interface{}) error {
+	config := meta.(*Config)
+
+	user := &directory.User{}
+
 	userPosixs := []*directory.UserPosixAccount{}
 	posixCount := d.Get("posix_accounts.#").(int)
 	for i := 0; i < posixCount; i++ {
@@ -352,17 +414,6 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	user.PosixAccounts = userPosixs
 
-	customSchemas := map[string]googleapi.RawMessage{}
-	for i := 0; i < d.Get("custom_schema.#").(int); i++ {
-		entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
-		customSchemas[entry["name"].(string)] = []byte(entry["value"].(string))
-	}
-	if len(customSchemas) > 0 {
-		user.CustomSchemas = customSchemas
-	}
-
-	user.SshPublicKeys = userSSHs
-
 	userNamePrefix := "name.0"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
@@ -370,30 +421,20 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	user.Name = userName
 
-	var createdUser *directory.User
 	var err error
 	err = retry(func() error {
-		createdUser, err = config.directory.Users.Insert(user).Do()
+		_, err = config.directory.Users.Update(userID, user).Do()
+		if e, ok := err.(*googleapi.Error); ok {
+			return errors.Wrap(e, e.Body)
+		}
 		return err
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error creating user: %s", err)
+		return fmt.Errorf("Error updating user: %s", err)
 	}
 
-	// Try to read the user, retrying for 404's
-	err = retryNotFound(func() error {
-		user, err = config.directory.Users.Get(createdUser.Id).Do()
-		return err
-	})
-
-	if err != nil {
-		return fmt.Errorf("[ERR] Taking too long to create this user: %s", err)
-	}
-
-	d.SetId(createdUser.Id)
-	log.Printf("[INFO] Created user: %s", createdUser.PrimaryEmail)
-	return resourceUserRead(d, meta)
+	return nil
 }
 
 func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -422,16 +463,12 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 			nullFields = append(nullFields, "primary_email")
 		}
 	}
-	if d.HasChange("password") {
-		if v, ok := d.GetOk("password"); ok {
-			log.Printf("[DEBUG] Updating user password: %s", d.Get("password").(string))
-			user.Password = v.(string)
-		} else {
-			log.Printf("[DEBUG] Removing user password")
-			user.Password = ""
-			nullFields = append(nullFields, "password")
-		}
-	}
+
+	// We do not control the password in terraform, so drop from update
+	log.Printf("[DEBUG] Removing user password")
+	user.Password = ""
+	nullFields = append(nullFields, "password")
+
 	if d.HasChange("hash_function") {
 		if v, ok := d.GetOk("hash_function"); ok {
 			log.Printf("[DEBUG] Updating user hash_function: %s", d.Get("hash_function").(string))
@@ -591,7 +628,8 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error updating user: %s", err)
+		log.Printf("[WARN] Please note, a persistent 503 backend error can mean you need to change your posix values to be unique.")
+		return fmt.Errorf("[ERROR] Error updating user: %s", err)
 	}
 
 	log.Printf("[INFO] Updated user: %s", updatedUser.PrimaryEmail)
@@ -609,7 +647,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Get("name").(string)))
+		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Id()))
 	}
 
 	d.SetId(user.Id)

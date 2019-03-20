@@ -1,14 +1,16 @@
 resource "gsuite_user" "developer" {
   # advise to set this field to true on creation, then false afterwards
-  change_password_next_login = false
+  change_password_next_login = true
 
   name {
     family_name = "Sillevis"
     given_name  = "Chase"
   }
 
-  # on creation this field is required
-  password = ""
+  # on creation this field is required, later during updates it is ignored;
+  # it is expected that the user and Google will handle passwords from there on
+  # out
+  password = "testtest123!"
 
   primary_email = "developer@sillevis.net"
 
@@ -17,6 +19,12 @@ resource "gsuite_user" "developer" {
     expiration_time_usec = "1549735670773"
   }
 
+  #
+  # WARN: it is possible on-creation of a new account that the POSIX data is
+  # found to not be unique, and a 503 backend error is returned indefinitely.
+  # In that case, the account is created, but without the POSIX data. Simply
+  # update the POSIX data and terraform apply to update until it works.
+  #
   # best to fill out all of these fields or face the consequences
   # might get 503 backend errors if you try to change this too often/fast
   posix_accounts {
