@@ -61,7 +61,7 @@ func resourceDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("[ERR] Error creating domain: %s", err)
+		return fmt.Errorf("[ERROR] Error creating domain: %s", err)
 	}
 
 	// There is no id as such for a Domain resource, therefore we use
@@ -123,7 +123,7 @@ func resourceDomainDelete(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("[ERR] Error deleting domain: %s", err)
+		return fmt.Errorf("[ERROR] Error deleting domain: %s", err)
 	}
 
 	d.SetId("")

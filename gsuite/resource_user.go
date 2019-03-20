@@ -345,12 +345,97 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("[ERR] Taking too long to create this user: %s", err)
+		return fmt.Errorf("[ERROR] Taking too long to create this user: %s", err)
+	}
+
+	if user.Suspended == false || user.SuspensionReason != "" {
+		log.Printf("[ERROR] Your newly created user has been automatically suspended by Google: %s", createdUser.PrimaryEmail)
+		log.Printf("[ERROR] Simply log in to the account, verify and accept the terms to unsuspend the account.")
+	}
+
+	// Now set POSIX data, after the account has been created.
+	err = userPosixCreate(d, createdUser.Id, meta)
+
+	if err != nil {
+		log.Printf("[ERROR] Failed to create POSIX data! The user has been created but the terraform operation failed: %s", err)
+		log.Printf("[ERROR] Not failing on this operation, your POSIX data has not been set. A next apply will retry.")
 	}
 
 	d.SetId(createdUser.Id)
 	log.Printf("[INFO] Created user: %s", createdUser.PrimaryEmail)
 	return resourceUserRead(d, meta)
+}
+
+func userPosixCreate(d *schema.ResourceData, userID string, meta interface{}) error {
+	config := meta.(*Config)
+
+	user := &directory.User{}
+
+	userPosixs := []*directory.UserPosixAccount{}
+	posixCount := d.Get("posix_accounts.#").(int)
+	for i := 0; i < posixCount; i++ {
+		posixConfig := d.Get(fmt.Sprintf("posix_accounts.%d", i)).(map[string]interface{})
+		userPosix := &directory.UserPosixAccount{}
+
+		if posixConfig["gecos"] != "" {
+			log.Printf("[DEBUG] Setting posix %d gecos: %s", i, posixConfig["gecos"].(string))
+			userPosix.Gecos = posixConfig["gecos"].(string)
+		}
+		if posixConfig["gid"] != 0 {
+			log.Printf("[DEBUG] Setting posix %d gid: %d", i, uint64(posixConfig["gid"].(int)))
+			userPosix.Gid = uint64(posixConfig["gid"].(int))
+		}
+		if posixConfig["home_directory"] != "" {
+			log.Printf("[DEBUG] Setting posix %d home_directory: %s", i, posixConfig["home_directory"].(string))
+			userPosix.HomeDirectory = posixConfig["home_directory"].(string)
+		}
+		if posixConfig["system_id"] != "" {
+			log.Printf("[DEBUG] Setting posix %d system_id: %s", i, posixConfig["system_id"].(string))
+			userPosix.SystemId = posixConfig["system_id"].(string)
+		}
+		if posixConfig["shell"] != "" {
+			log.Printf("[DEBUG] Setting posix %d shell: %s", i, posixConfig["shell"].(string))
+			userPosix.Shell = posixConfig["shell"].(string)
+		}
+		if posixConfig["primary"] != "" {
+			log.Printf("[DEBUG] Setting posix %d primary: %t", i, posixConfig["primary"].(bool))
+			userPosix.Primary = posixConfig["primary"].(bool)
+		}
+		if posixConfig["uid"] != 0 {
+			log.Printf("[DEBUG] Setting posix %d uid: %d", i, uint64(posixConfig["uid"].(int)))
+			userPosix.Uid = uint64(posixConfig["uid"].(int))
+		}
+		if posixConfig["username"] != "" {
+			log.Printf("[DEBUG] Setting posix %d username: %s", i, posixConfig["username"].(string))
+			userPosix.Username = posixConfig["username"].(string)
+		}
+
+		userPosixs = append(userPosixs, userPosix)
+	}
+	user.PosixAccounts = userPosixs
+
+	userNamePrefix := "name.0"
+	userName := &directory.UserName{
+		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
+		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
+	}
+	user.Name = userName
+
+	var updatedUser *directory.User
+	var err error
+	err = retry(func() error {
+		updatedUser, err = config.directory.Users.Update(userID, user).Do()
+		if e, ok := err.(*googleapi.Error); ok {
+			return errors.Wrap(e, e.Body)
+		}
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("Error updating user: %s", err)
+	}
+
+	return nil
 }
 
 func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -379,16 +464,12 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 			nullFields = append(nullFields, "primary_email")
 		}
 	}
-	//if d.HasChange("password") {
-	//	if v, ok := d.GetOk("password"); ok {
-	//		log.Printf("[DEBUG] Updating user password: %s", d.Get("password").(string))
-	//		user.Password = v.(string)
-	//	} else {
+
+	// We do not control the password in terraform, so drop from update
 	log.Printf("[DEBUG] Removing user password")
 	user.Password = ""
 	nullFields = append(nullFields, "password")
-	//	}
-	//}
+
 	if d.HasChange("hash_function") {
 		if v, ok := d.GetOk("hash_function"); ok {
 			log.Printf("[DEBUG] Updating user hash_function: %s", d.Get("hash_function").(string))
@@ -548,7 +629,8 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error updating user: %s", err)
+		log.Printf("[WARN] Please note, a persistent 503 backend error can mean you need to change your posix values to be unique.")
+		return fmt.Errorf("[ERROR] Error updating user: %s", err)
 	}
 
 	log.Printf("[INFO] Updated user: %s", updatedUser.PrimaryEmail)

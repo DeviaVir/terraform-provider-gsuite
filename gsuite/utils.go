@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -46,6 +47,17 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool) error {
 				return resource.RetryableError(gerr)
 			}
 		}
+
+		// Deal with the broken API
+		if strings.Contains(fmt.Sprintf("%s", err), "Invalid Input: Bad request for ") && strings.Contains(fmt.Sprintf("%s", err), "\"code\":400") {
+			log.Printf("[DEBUG] Retrying invalid response from API")
+			return resource.RetryableError(err)
+		}
+		if strings.Contains(fmt.Sprintf("%s", err), "Service unavailable. Please try again") {
+			log.Printf("[DEBUG] Retrying service unavailable from API")
+			return resource.RetryableError(err)
+		}
+
 		return resource.NonRetryableError(err)
 	})
 }

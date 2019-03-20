@@ -104,7 +104,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("[ERR] Error listing existing group members: %s", err)
+			return fmt.Errorf("[ERROR] Error listing existing group members: %s", err)
 		}
 		var locatedGroupMember *directory.Member
 		for _, existingGroupMember := range existingGroupMembers.Members {
@@ -114,7 +114,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 		if locatedGroupMember == nil {
-			return fmt.Errorf("[ERR] Error locating existing group member %s", groupMember.Email)
+			return fmt.Errorf("[ERROR] Error locating existing group member %s", groupMember.Email)
 		}
 		log.Printf("[INFO] found existing group member %s", locatedGroupMember.Email)
 
@@ -125,7 +125,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		})
 
 		if err != nil {
-			return fmt.Errorf("[ERR] Error updating existing group member: %s", err)
+			return fmt.Errorf("[ERROR] Error updating existing group member: %s", err)
 		}
 		log.Printf("[INFO] Updated group member: %s", groupMember.Email)
 		d.SetId(locatedGroupMember.Id)
@@ -141,7 +141,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("[ERR] Taking too long to create this group member: %s", err)
+		return fmt.Errorf("[ERROR] Taking too long to create this group member: %s", err)
 	}
 
 	return resourceGroupMemberRead(d, meta)
@@ -175,7 +175,7 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("[ERR] Error updating group member: %s", err)
+		return fmt.Errorf("[ERROR] Error updating group member: %s", err)
 	}
 
 	log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
@@ -216,7 +216,7 @@ func resourceGroupMemberDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("[ERR] Error deleting group member: %s", err)
+		return fmt.Errorf("[ERROR] Error deleting group member: %s", err)
 	}
 
 	d.SetId("")
@@ -240,7 +240,7 @@ func resourceGroupMemberImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	id, err := config.directory.Members.Get(group, member).Do()
 
 	if err != nil {
-		return nil, fmt.Errorf("[ERR] Error fetching member, make sure the member exists: %s ", err)
+		return nil, fmt.Errorf("[ERROR] Error fetching member, make sure the member exists: %s ", err)
 	}
 
 	d.SetId(id.Id)
