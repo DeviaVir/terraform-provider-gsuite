@@ -1,18 +1,18 @@
 package gsuite
 
 import (
-  "strings"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
-  directory "google.golang.org/api/admin/directory/v1"
+	directory "google.golang.org/api/admin/directory/v1"
 )
 
 func dataUser() *schema.Resource {
 	return &schema.Resource{
 		Read: dataUserRead,
 		Schema: map[string]*schema.Schema{
-      "primary_email": {
+			"primary_email": {
 				Type:     schema.TypeString,
 				Required: true,
 				StateFunc: func(val interface{}) string {
@@ -20,7 +20,7 @@ func dataUser() *schema.Resource {
 				},
 			},
 
-      "aliases": {
+			"aliases": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -225,7 +225,7 @@ func dataUser() *schema.Resource {
 }
 
 func dataUserRead(d *schema.ResourceData, meta interface{}) error {
-  config := meta.(*Config)
+	config := meta.(*Config)
 
 	var user *directory.User
 	var err error

@@ -11,7 +11,7 @@ func dataGroup() *schema.Resource {
 	return &schema.Resource{
 		Read: dataGroupRead,
 		Schema: map[string]*schema.Schema{
-      "email": {
+			"email": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -60,7 +60,7 @@ func dataGroup() *schema.Resource {
 }
 
 func dataGroupRead(d *schema.ResourceData, meta interface{}) error {
-  config := meta.(*Config)
+	config := meta.(*Config)
 
 	var group *directory.Group
 	var err error
