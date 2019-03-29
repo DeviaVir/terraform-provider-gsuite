@@ -39,15 +39,17 @@ func Provider() *schema.Provider {
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
+			"gsuite_group": dataGroup(),
+			"gsuite_user": dataUser(),
 			"gsuite_user_attributes": dataUserAttributes(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"gsuite_domain":        resourceDomain(),
 			"gsuite_group":         resourceGroup(),
-			"gsuite_user":          resourceUser(),
-			"gsuite_user_schema":   resourceUserSchema(),
 			"gsuite_group_member":  resourceGroupMember(),
 			"gsuite_group_members": resourceGroupMembers(),
-			"gsuite_domain":        resourceDomain(),
+			"gsuite_user":          resourceUser(),
+			"gsuite_user_schema":   resourceUserSchema(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
@@ -64,7 +66,7 @@ func oauthScopesFromConfigOrDefault(oauthScopesSet *schema.Set) []string {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	var impersonatedUserEmail string
-	var customerId string
+	var customerID string
 
 	credentials := d.Get("credentials").(string)
 
@@ -81,10 +83,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	// By default we use my_customer as customer ID, which means the API will use
 	// the G Suite customer ID associated with the impersonating account.
 	if v, ok := d.GetOk("customer_id"); ok {
-		customerId = v.(string)
+		customerID = v.(string)
 	} else {
 		log.Printf("[INFO] No Customer ID provided. Using my_customer.")
-		customerId = "my_customer"
+		customerID = "my_customer"
 	}
 
 	oauthScopes := oauthScopesFromConfigOrDefault(d.Get("oauth_scopes").(*schema.Set))
@@ -92,7 +94,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Credentials:           credentials,
 		ImpersonatedUserEmail: impersonatedUserEmail,
 		OauthScopes:           oauthScopes,
-		CustomerId:            customerId,
+		CustomerId:            customerID,
 	}
 
 	if err := config.loadAndValidate(); err != nil {

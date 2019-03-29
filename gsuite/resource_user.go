@@ -110,7 +110,7 @@ func resourceUser() *schema.Resource {
 			},
 
 			"name": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeMap,
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
