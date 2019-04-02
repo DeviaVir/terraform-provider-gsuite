@@ -320,7 +320,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 
 	user.SshPublicKeys = userSSHs
 
-	userNamePrefix := "name.0"
+	userNamePrefix := "name"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
 		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
@@ -414,7 +414,7 @@ func userPosixCreate(d *schema.ResourceData, userID string, meta interface{}) er
 	}
 	user.PosixAccounts = userPosixs
 
-	userNamePrefix := "name.0"
+	userNamePrefix := "name"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
 		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
@@ -606,7 +606,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		user.CustomSchemas = customSchemas
 	}
 
-	userNamePrefix := "name.0"
+	userNamePrefix := "name"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
 		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
