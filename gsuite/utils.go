@@ -26,21 +26,31 @@ func handleNotFoundError(err error, d *schema.ResourceData, resource string) err
 }
 
 func retry(retryFunc func() error) error {
-	return retryTime(retryFunc, 1, false)
+	return retryTime(retryFunc, 1, false, false)
 }
 
 func retryNotFound(retryFunc func() error) error {
-	return retryTime(retryFunc, 1, true)
+	return retryTime(retryFunc, 1, true, false)
 }
 
-func retryTime(retryFunc func() error, minutes int, retryNotFound bool) error {
+func retryPassDuplicate(retryFunc func() error) error {
+	return retryTime(retryFunc, 1, true, true)
+}
+
+func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPassDuplicate bool) error {
 	return resource.Retry(time.Duration(minutes)*time.Minute, func() *resource.RetryError {
 		err := retryFunc()
 		if err == nil {
 			return nil
 		}
-		if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 409 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
-			return resource.RetryableError(gerr)
+		if retryPassDuplicate {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+				return resource.RetryableError(gerr)
+			}
+		} else {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 409 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+				return resource.RetryableError(gerr)
+			}
 		}
 		if retryNotFound {
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 404) {
