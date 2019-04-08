@@ -87,7 +87,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 
 	var createdGroupMember *directory.Member
 	var err error
-	err = retry(func() error {
+	err = retryPassDuplicate(func() error {
 		createdGroupMember, err = config.directory.Members.Insert(group, groupMember).Do()
 		return err
 	})
@@ -136,7 +136,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 
 	// Try to read the group member, retrying for 404's
 	err = retryNotFound(func() error {
-		groupMember, err = config.directory.Members.Get(group, createdGroupMember.Id).Do()
+		groupMember, err = config.directory.Members.Get(group, d.Id()).Do()
 		return err
 	})
 
