@@ -5,8 +5,8 @@ package gsuite
 import (
 	"fmt"
 	"log"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"

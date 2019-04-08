@@ -234,6 +234,8 @@ func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("admin_created", group.AdminCreated)
 	d.Set("aliases", group.Aliases)
 	d.Set("non_editable_aliases", group.NonEditableAliases)
+	d.Set("description", group.Description)
+	d.Set("name", group.Name)
 
 	return nil
 }
