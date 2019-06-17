@@ -195,6 +195,11 @@ func resourceUser() *schema.Resource {
 				},
 			},
 
+			"org_unit_path": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+
 			"ssh_public_keys": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -259,6 +264,10 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	if v, ok := d.GetOk("primary_email"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "primary_email", v.(string))
 		user.PrimaryEmail = strings.ToLower(v.(string))
+	}
+	if v, ok := d.GetOk("org_unit_path"); ok {
+		log.Printf("[DEBUG] Setting %s: %s", "org_unit_path", v.(string))
+		user.OrgUnitPath = v.(string)
 	}
 	if v, ok := d.GetOk("password"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "password", v.(string))
@@ -464,6 +473,17 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	if d.HasChange("org_unit_path") {
+		if v, ok := d.GetOk("org_unit_path"); ok {
+			log.Printf("[DEBUG] Updating user org_unit_path: %s", d.Get("org_unit_path").(string))
+			user.OrgUnitPath = v.(string)
+		} else {
+			log.Printf("[DEBUG] Removing user org_unit_path")
+			user.OrgUnitPath = ""
+			nullFields = append(nullFields, "org_unit_path")
+		}
+	}
+
 	// We do not control the password in terraform, so drop from update
 	log.Printf("[DEBUG] Removing user password")
 	user.Password = ""
@@ -653,6 +673,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(user.Id)
 	d.Set("deletion_time", user.DeletionTime)
 	d.Set("primary_email", user.PrimaryEmail)
+	d.Set("org_unit_path", user.OrgUnitPath)
 	d.Set("password", user.Password)
 	d.Set("hash_function", user.HashFunction)
 	d.Set("suspension_reason", user.SuspensionReason)
@@ -709,6 +730,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.SetId(id.Id)
 	d.Set("deletion_time", id.DeletionTime)
 	d.Set("primary_email", id.PrimaryEmail)
+	d.Set("org_unit_path", id.OrgUnitPath)
 	d.Set("password", id.Password)
 	d.Set("hash_function", id.HashFunction)
 	d.Set("suspension_reason", id.SuspensionReason)
