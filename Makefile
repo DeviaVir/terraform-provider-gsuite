@@ -71,6 +71,7 @@ define make-xc-target
 				GOOS="${1}" \
 				GOARCH="${2}" \
 				go build \
+				  -mod vendor \
 				  -a \
 					-o="pkg/${1}_${2}/${NAME}_v${VERSION}${3}" \
 					-ldflags "${LD_FLAGS}" \
@@ -88,8 +89,8 @@ $(foreach goarch,$(XC_ARCH),$(foreach goos,$(XC_OS),$(eval $(call make-xc-target
 
 # vendor pulls and tidies all dependencies
 vendor:
-	@GO111MODULE=on go mod tidy
 	@GO111MODULE=on go mod vendor
+	@GO111MODULE=on go mod tidy
 .PHONY: vendor
 
 # vendor_update updates all dependencies
@@ -99,7 +100,7 @@ vendor_update:
 .PHONY: vendor_update
 
 # dev builds and installs the plugin into ~/.terraform.d
-dev:
+dev: vendor
 	@mkdir -p "${PLUGIN_PATH}"
 	@GO111MODULE=on go build \
 		-mod vendor \
@@ -114,7 +115,7 @@ test:
 		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
 
 # dist builds the binaries and then signs and packages them for distribution
-dist:
+dist: vendor
 ifndef GPG_KEY
 	@echo "==> ERROR: No GPG key specified! Without a GPG key, this release cannot"
 	@echo "           be signed. Set the environment variable GPG_KEY to the ID of"
