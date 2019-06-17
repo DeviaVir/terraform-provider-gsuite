@@ -20,6 +20,11 @@ func dataUser() *schema.Resource {
 				},
 			},
 
+			"org_unit_path": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+
 			"aliases": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -241,6 +246,7 @@ func dataUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(user.Id)
 	d.Set("deletion_time", user.DeletionTime)
 	d.Set("primary_email", user.PrimaryEmail)
+	d.Set("org_unit_path", user.OrgUnitPath)
 	d.Set("password", user.Password)
 	d.Set("hash_function", user.HashFunction)
 	d.Set("suspension_reason", user.SuspensionReason)
