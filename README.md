@@ -105,7 +105,7 @@ G Suite provider.
 
 1. `cd` into `$HOME/.terraform.d/plugins/terraform-provider-gsuite`
 
-1. Run `dep ensure` to fetch the go vendor files
+1. Run `make vendor` to fetch the go vendor files
 
 1. Make your changes
 

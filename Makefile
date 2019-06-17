@@ -66,6 +66,7 @@ define make-xc-target
 			--workdir="/go/src/${PROJECT}" \
 			"golang:${GOVERSION}" \
 			env \
+				GO111MODULE="on" \
 				CGO_ENABLED="0" \
 				GOOS="${1}" \
 				GOARCH="${2}" \
@@ -85,15 +86,23 @@ define make-xc-target
 endef
 $(foreach goarch,$(XC_ARCH),$(foreach goos,$(XC_OS),$(eval $(call make-xc-target,$(goos),$(goarch),$(if $(findstring windows,$(goos)),.exe,)))))
 
-# deps updates all dependencies
-deps:
-	@dep ensure -update
-	@dep prune
+# vendor pulls and tidies all dependencies
+vendor:
+	@GO111MODULE=on go mod tidy
+	@GO111MODULE=on go mod vendor
+.PHONY: vendor
+
+# vendor_update updates all dependencies
+vendor_update:
+	@GO111MODULE=on go get -u ./...
+	@$(MAKE) vendor
+.PHONY: vendor_update
 
 # dev builds and installs the plugin into ~/.terraform.d
 dev:
 	@mkdir -p "${PLUGIN_PATH}"
-	@go build \
+	@GO111MODULE=on go build \
+		-mod vendor \
 		-ldflags "${LD_FLAGS}" \
 		-tags "${GOTAGS}" \
 		-o "${PLUGIN_PATH}/terraform-provider-gsuite"
