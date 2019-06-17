@@ -54,6 +54,7 @@ Credentials can also be provided via the following environment variables:
 - GOOGLE_CREDENTIALS
 - GOOGLE_CLOUD_KEYFILE_JSON
 - GCLOUD_KEYFILE_JSON
+- GOOGLE_APPLICATION_CREDENTIALS
 - IMPERSONATED_USER_EMAIL
 
 ### Using a personal administrator account
