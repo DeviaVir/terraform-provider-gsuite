@@ -193,7 +193,7 @@ func resourceUser() *schema.Resource {
 			"org_unit_path": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default: "/",
+				Default:  "/",
 			},
 
 			"ssh_public_keys": {
