@@ -14,7 +14,6 @@ import (
 func flattenUserName(name *directory.UserName) map[string]interface{} {
 	return map[string]interface{}{
 		"family_name": name.FamilyName,
-		"full_name":   name.FullName,
 		"given_name":  name.GivenName,
 	}
 }
@@ -118,10 +117,6 @@ func resourceUser() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"full_name": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 						"given_name": {
 							Type:     schema.TypeString,
 							Required: true,
@@ -197,7 +192,8 @@ func resourceUser() *schema.Resource {
 
 			"org_unit_path": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  "/",
 			},
 
 			"ssh_public_keys": {

@@ -19,7 +19,7 @@ GOVERSION := 1.12
 PROJECT := github.com/DeviaVir/terraform-provider-gsuite
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
 NAME := $(notdir $(PROJECT))
-VERSION := 0.1.20
+VERSION := 0.1.21
 EXTERNAL_TOOLS = \
 	github.com/golang/dep/cmd/dep
 
@@ -66,10 +66,12 @@ define make-xc-target
 			--workdir="/go/src/${PROJECT}" \
 			"golang:${GOVERSION}" \
 			env \
+				GO111MODULE="on" \
 				CGO_ENABLED="0" \
 				GOOS="${1}" \
 				GOARCH="${2}" \
 				go build \
+				  -mod vendor \
 				  -a \
 					-o="pkg/${1}_${2}/${NAME}_v${VERSION}${3}" \
 					-ldflags "${LD_FLAGS}" \
@@ -85,15 +87,23 @@ define make-xc-target
 endef
 $(foreach goarch,$(XC_ARCH),$(foreach goos,$(XC_OS),$(eval $(call make-xc-target,$(goos),$(goarch),$(if $(findstring windows,$(goos)),.exe,)))))
 
-# deps updates all dependencies
-deps:
-	@dep ensure -update
-	@dep prune
+# vendor pulls and tidies all dependencies
+vendor:
+	@GO111MODULE=on go mod vendor
+	@GO111MODULE=on go mod tidy
+.PHONY: vendor
+
+# vendor_update updates all dependencies
+vendor_update:
+	@GO111MODULE=on go get -u ./...
+	@$(MAKE) vendor
+.PHONY: vendor_update
 
 # dev builds and installs the plugin into ~/.terraform.d
-dev:
+dev: vendor
 	@mkdir -p "${PLUGIN_PATH}"
-	@go build \
+	@GO111MODULE=on go build \
+		-mod vendor \
 		-ldflags "${LD_FLAGS}" \
 		-tags "${GOTAGS}" \
 		-o "${PLUGIN_PATH}/terraform-provider-gsuite"
@@ -105,7 +115,7 @@ test:
 		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
 
 # dist builds the binaries and then signs and packages them for distribution
-dist:
+dist: vendor
 ifndef GPG_KEY
 	@echo "==> ERROR: No GPG key specified! Without a GPG key, this release cannot"
 	@echo "           be signed. Set the environment variable GPG_KEY to the ID of"

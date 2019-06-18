@@ -22,7 +22,7 @@ func dataUser() *schema.Resource {
 
 			"org_unit_path": {
 				Type:     schema.TypeString,
-				Required: true,
+				Computed: true,
 			},
 
 			"aliases": {
