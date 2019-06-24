@@ -18,6 +18,17 @@ func flattenUserName(name *directory.UserName) map[string]interface{} {
 	}
 }
 
+func flattenCustomSchema(schema map[string]googleapi.RawMessage) []map[string]interface{} {
+	result := make([]map[string]interface{}, 0, len(schema))
+	for key, value := range schema {
+		customSchemaMap := make(map[string]interface{})
+		customSchemaMap["name"] = key
+		customSchemaMap["value"] = string(value)
+		result = append(result, customSchemaMap)
+	}
+	return result
+}
+
 func resourceUser() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceUserCreate,
@@ -658,7 +669,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	var user *directory.User
 	var err error
 	err = retry(func() error {
-		user, err = config.directory.Users.Get(d.Id()).Do()
+		user, err = config.directory.Users.Get(d.Id()).Projection("full").Do()
 		return err
 	})
 
@@ -692,7 +703,10 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", flattenUserName(user.Name))
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
-	d.Set("custom_schema", user.CustomSchemas)
+
+	if err = d.Set("custom_schema", flattenCustomSchema(user.CustomSchemas)); err != nil {
+		return fmt.Errorf("Error setting custom_schema in state: %s", err.Error())
+	}
 
 	return nil
 }
@@ -717,7 +731,7 @@ func resourceUserDelete(d *schema.ResourceData, meta interface{}) error {
 func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
 
-	id, err := config.directory.Users.Get(d.Id()).Do()
+	id, err := config.directory.Users.Get(d.Id()).Projection("full").Do()
 
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching user. Make sure the user exists: %s ", err)
@@ -749,7 +763,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("name", flattenUserName(id.Name))
 	d.Set("posix_accounts", id.PosixAccounts)
 	d.Set("ssh_public_keys", id.SshPublicKeys)
-	d.Set("custom_schema", id.CustomSchemas)
+	d.Set("custom_schema", flattenCustomSchema(id.CustomSchemas))
 
 	return []*schema.ResourceData{d}, nil
 }
