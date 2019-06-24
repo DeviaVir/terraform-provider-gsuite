@@ -261,7 +261,6 @@ func resourceGroupImporter(d *schema.ResourceData, meta interface{}) ([]*schema.
 	config := meta.(*Config)
 
 	id, err := config.directory.Groups.Get(d.Id()).Do()
-
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Error fetching group. Make sure the group exists: %s ", err)
 	}

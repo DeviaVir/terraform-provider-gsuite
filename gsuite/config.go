@@ -16,6 +16,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 	directory "google.golang.org/api/admin/directory/v1"
+	groupSettings "google.golang.org/api/groupssettings/v1"
 )
 
 var defaultOauthScopes = []string{
@@ -37,6 +38,8 @@ type Config struct {
 	OauthScopes []string
 
 	directory *directory.Service
+
+	groupSettings *groupSettings.Service
 }
 
 // loadAndValidate loads the application default credentials from the
@@ -104,6 +107,14 @@ func (c *Config) loadAndValidate() error {
 	}
 	directorySvc.UserAgent = userAgent
 	c.directory = directorySvc
+
+	// Create the groupSettings service.
+	groupSettingsSvc, err := groupSettings.New(client)
+	if err != nil {
+		return nil
+	}
+	groupSettingsSvc.UserAgent = userAgent
+	c.groupSettings = groupSettingsSvc
 
 	return nil
 }
