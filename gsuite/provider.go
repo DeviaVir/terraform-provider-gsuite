@@ -41,6 +41,7 @@ func Provider() *schema.Provider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"gsuite_group":           dataGroup(),
+			"gsuite_group_settings":  dataGroupSettings(),
 			"gsuite_user":            dataUser(),
 			"gsuite_user_attributes": dataUserAttributes(),
 		},

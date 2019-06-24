@@ -395,8 +395,8 @@ func resourceGroupSettingsCreate(d *schema.ResourceData, meta interface{}) error
 		groupSetting.IncludeInGlobalAddressList = v.(string)
 	}
 	if v, ok := d.GetOk("max_message_bytes"); ok {
-		log.Printf("[DEBUG] Setting %s: %d", "max_message_bytes", v.(int64))
-		groupSetting.MaxMessageBytes = v.(int64)
+		log.Printf("[DEBUG] Setting %s: %d", "max_message_bytes", v.(int))
+		groupSetting.MaxMessageBytes = int64(v.(int))
 	}
 	if v, ok := d.GetOk("members_can_post_as_the_group"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "members_can_post_as_the_group", v.(string))
@@ -693,8 +693,8 @@ func resourceGroupSettingsUpdate(d *schema.ResourceData, meta interface{}) error
 	}
 	if d.HasChange("max_message_bytes") {
 		if v, ok := d.GetOk("max_message_bytes"); ok {
-			log.Printf("[DEBUG] Updating max_message_bytes: %d", v.(int64))
-			groupSetting.MaxMessageBytes = v.(int64)
+			log.Printf("[DEBUG] Updating max_message_bytes: %d", v.(int))
+			groupSetting.MaxMessageBytes = int64(v.(int))
 		} else {
 			log.Printf("[DEBUG] Removing groupSetting MaxMessageBytes")
 			groupSetting.MaxMessageBytes = 0
