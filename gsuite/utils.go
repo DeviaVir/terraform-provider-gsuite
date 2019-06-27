@@ -68,7 +68,7 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 			return resource.RetryableError(err)
 		}
 		if strings.Contains(fmt.Sprintf("%s", err), "Eventual consistency. Please try again") {
-			log.Printf("[DEBUG] Retrying service unavailable from API")
+			log.Printf("[DEBUG] Retrying due to eventual consistency")
 			return resource.RetryableError(err)
 		}
 
