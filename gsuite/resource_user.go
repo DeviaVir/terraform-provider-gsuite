@@ -670,6 +670,9 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	var err error
 	err = retry(func() error {
 		user, err = config.directory.Users.Get(d.Id()).Projection("full").Do()
+		if user != nil && user.Name == nil {
+			return errors.New("Eventual consistency. Please try again")
+		}
 		return err
 	})
 
