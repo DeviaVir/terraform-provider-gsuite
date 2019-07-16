@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"encoding/json"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/pkg/errors"
 	directory "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
+
+
+
 
 func flattenUserName(name *directory.UserName) map[string]interface{} {
 	return map[string]interface{}{
@@ -18,12 +22,25 @@ func flattenUserName(name *directory.UserName) map[string]interface{} {
 	}
 }
 
+func normalizeJSON(jsonString interface{}) string {
+	if jsonString == nil || jsonString == "" {
+		return ""
+	}
+	var j interface{}
+	err := json.Unmarshal([]byte(jsonString.(string)), &j)
+	if err != nil {
+		return fmt.Sprintf("Error parsing JSON: %s", err)
+	}
+	b, _ := json.Marshal(j)
+	return string(b[:])
+}
+
 func flattenCustomSchema(schema map[string]googleapi.RawMessage) []map[string]interface{} {
 	result := make([]map[string]interface{}, 0, len(schema))
 	for key, value := range schema {
 		customSchemaMap := make(map[string]interface{})
 		customSchemaMap["name"] = key
-		customSchemaMap["value"] = string(value)
+		customSchemaMap["value"] = normalizeJSON(string(value))
 		result = append(result, customSchemaMap)
 	}
 	return result
