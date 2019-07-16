@@ -12,9 +12,6 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
-
-
-
 func flattenUserName(name *directory.UserName) map[string]interface{} {
 	return map[string]interface{}{
 		"family_name": name.FamilyName,
