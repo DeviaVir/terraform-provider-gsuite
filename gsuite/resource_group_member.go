@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
-
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
@@ -41,6 +40,12 @@ var schemaMember = map[string]*schema.Schema{
 		Type:     schema.TypeString,
 		Required: true,
 		ForceNew: true,
+		StateFunc: func(val interface{}) string {
+			return strings.ToLower(val.(string))
+		},
+		DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+			return strings.ToLower(strings.Trim(old, `"`)) == strings.ToLower(strings.Trim(new, `"`))
+		},
 	},
 }
 
@@ -48,6 +53,9 @@ var schemaGroup = map[string]*schema.Schema{
 	"group": &schema.Schema{
 		Type:     schema.TypeString,
 		Required: true,
+		StateFunc: func(val interface{}) string {
+			return strings.ToLower(val.(string))
+		},
 	},
 }
 
@@ -70,7 +78,7 @@ func resourceGroupMember() *schema.Resource {
 func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	group := d.Get("group").(string)
+	group := strings.ToLower(d.Get("group").(string))
 
 	groupMember := &directory.Member{
 		Role:  strings.ToUpper(d.Get("role").(string)),
@@ -79,17 +87,63 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 
 	var createdGroupMember *directory.Member
 	var err error
-	err = retry(func() error {
+	err = retryPassDuplicate(func() error {
 		createdGroupMember, err = config.directory.Members.Insert(group, groupMember).Do()
 		return err
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error creating group member: %s", err)
+		if !strings.Contains(err.Error(), "Member already exists") {
+			return fmt.Errorf("error creating group member: %s", err)
+		}
+		log.Printf("[INFO] %s already part of this group. attempting to update", groupMember.Email)
+
+		var existingGroupMembers *directory.Members
+		err = retry(func() error {
+			existingGroupMembers, err = config.directory.Members.List(group).Do()
+			return err
+		})
+		if err != nil {
+			return fmt.Errorf("[ERROR] Error listing existing group members: %s", err)
+		}
+		var locatedGroupMember *directory.Member
+		for _, existingGroupMember := range existingGroupMembers.Members {
+			if existingGroupMember.Email == groupMember.Email {
+				locatedGroupMember = existingGroupMember
+				break
+			}
+		}
+		if locatedGroupMember == nil {
+			return fmt.Errorf("[ERROR] Error locating existing group member %s", groupMember.Email)
+		}
+		log.Printf("[INFO] found existing group member %s", locatedGroupMember.Email)
+
+		var err error
+		err = retry(func() error {
+			_, err = config.directory.Members.Patch(group, locatedGroupMember.Id, groupMember).Do()
+			return err
+		})
+
+		if err != nil {
+			return fmt.Errorf("[ERROR] Error updating existing group member: %s", err)
+		}
+		log.Printf("[INFO] Updated group member: %s", groupMember.Email)
+		d.SetId(locatedGroupMember.Id)
+	} else {
+		log.Printf("[INFO] Created group member: %s", createdGroupMember.Email)
+		d.SetId(createdGroupMember.Id)
 	}
 
-	d.SetId(createdGroupMember.Id)
-	log.Printf("[INFO] Created group: %s", createdGroupMember.Email)
+	// Try to read the group member, retrying for 404's
+	err = retryNotFound(func() error {
+		groupMember, err = config.directory.Members.Get(group, d.Id()).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("[ERROR] Taking too long to create this group member: %s", err)
+	}
+
 	return resourceGroupMemberRead(d, meta)
 }
 
@@ -100,8 +154,13 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 	nullFields := []string{}
 
 	if d.HasChange("email") {
-		log.Printf("[DEBUG] Updating groupMember email: %s", d.Get("email").(string))
+		log.Printf("[DEBUG] Updating groupMember email (recreating member): %s", d.Get("email").(string))
 		groupMember.Email = strings.ToLower(d.Get("email").(string))
+	}
+
+	if d.HasChange("role") {
+		log.Printf("[DEBUG] Updating groupMember role: %s to %s", d.Get("email").(string), d.Get("role").(string))
+		groupMember.Role = strings.ToUpper(d.Get("role").(string))
 	}
 
 	if len(nullFields) > 0 {
@@ -116,7 +175,7 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error updating group member: %s", err)
+		return fmt.Errorf("[ERROR] Error updating group member: %s", err)
 	}
 
 	log.Printf("[INFO] Updated groupMember: %s", updatedGroupMember.Email)
@@ -138,6 +197,7 @@ func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(groupMember.Id)
+	d.Set("role", strings.ToUpper(groupMember.Role))
 	d.Set("email", strings.ToLower(groupMember.Email))
 	d.Set("etag", groupMember.Etag)
 	d.Set("kind", groupMember.Kind)
@@ -156,7 +216,7 @@ func resourceGroupMemberDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("Error deleting group member: %s", err)
+		return fmt.Errorf("[ERROR] Error deleting group member: %s", err)
 	}
 
 	d.SetId("")
@@ -173,14 +233,14 @@ func resourceGroupMemberImporter(d *schema.ResourceData, meta interface{}) ([]*s
 	}
 
 	if len(s) < 2 {
-		return nil, fmt.Errorf("Import via [group]:[member email] or [group]/[member email]!")
+		return nil, fmt.Errorf("[WARN] Import via [group]:[member email] or [group]/[member email]")
 	}
 	group, member := strings.ToLower(s[0]), strings.ToLower(s[1])
 
 	id, err := config.directory.Members.Get(group, member).Do()
 
 	if err != nil {
-		return nil, fmt.Errorf("Error fetching member. Make sure the member exists: %s ", err)
+		return nil, fmt.Errorf("[ERROR] Error fetching member, make sure the member exists: %s ", err)
 	}
 
 	d.SetId(id.Id)

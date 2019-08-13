@@ -5,6 +5,7 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -25,18 +26,52 @@ func handleNotFoundError(err error, d *schema.ResourceData, resource string) err
 }
 
 func retry(retryFunc func() error) error {
-	return retryTime(retryFunc, 1)
+	return retryTime(retryFunc, 1, false, false)
 }
 
-func retryTime(retryFunc func() error, minutes int) error {
+func retryNotFound(retryFunc func() error) error {
+	return retryTime(retryFunc, 1, true, false)
+}
+
+func retryPassDuplicate(retryFunc func() error) error {
+	return retryTime(retryFunc, 1, true, true)
+}
+
+func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPassDuplicate bool) error {
 	return resource.Retry(time.Duration(minutes)*time.Minute, func() *resource.RetryError {
 		err := retryFunc()
 		if err == nil {
 			return nil
 		}
-		if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
-			return resource.RetryableError(gerr)
+		if retryPassDuplicate {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+				return resource.RetryableError(gerr)
+			}
+		} else {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 409 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+				return resource.RetryableError(gerr)
+			}
 		}
+		if retryNotFound {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 404) {
+				return resource.RetryableError(gerr)
+			}
+		}
+
+		// Deal with the broken API
+		if strings.Contains(fmt.Sprintf("%s", err), "Invalid Input: Bad request for \"") && strings.Contains(fmt.Sprintf("%s", err), "\"code\":400") {
+			log.Printf("[DEBUG] Retrying invalid response from API")
+			return resource.RetryableError(err)
+		}
+		if strings.Contains(fmt.Sprintf("%s", err), "Service unavailable. Please try again") {
+			log.Printf("[DEBUG] Retrying service unavailable from API")
+			return resource.RetryableError(err)
+		}
+		if strings.Contains(fmt.Sprintf("%s", err), "Eventual consistency. Please try again") {
+			log.Printf("[DEBUG] Retrying due to eventual consistency")
+			return resource.RetryableError(err)
+		}
+
 		return resource.NonRetryableError(err)
 	})
 }

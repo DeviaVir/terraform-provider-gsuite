@@ -1,6 +1,6 @@
-# Terraform GSuite Provider
+# Terraform G Suite Provider
 
-This is a terraform provider for managing GSuite (Admin SDK) resources on Google
+This is a terraform provider for managing G Suite (Admin SDK) resources on Google
 
 ## Authentication
 
@@ -25,6 +25,12 @@ provider "gsuite" {
 }
 ```
 
+**NOTE** If you are creating or modifying schemas and custom user attributes
+you will need the following additional scope:
+
+    https://www.googleapis.com/auth/admin.directory.userschema
+
+
 ### Using a service account
 
 Service accounts are great for automated workflows.
@@ -48,6 +54,8 @@ Credentials can also be provided via the following environment variables:
 - GOOGLE_CREDENTIALS
 - GOOGLE_CLOUD_KEYFILE_JSON
 - GCLOUD_KEYFILE_JSON
+- GOOGLE_APPLICATION_CREDENTIALS
+- IMPERSONATED_USER_EMAIL
 
 ### Using a personal administrator account
 
@@ -70,7 +78,7 @@ https://www.googleapis.com/auth/admin.directory.user,
 ```
 
 Now that you have a credential that is allowed to the Admin SDK, you can use the
-GSuite provider.
+G Suite provider.
 
 ## Installation
 
@@ -97,7 +105,7 @@ GSuite provider.
 
 1. `cd` into `$HOME/.terraform.d/plugins/terraform-provider-gsuite`
 
-1. Run `dep ensure` to fetch the go vendor files
+1. Run `make vendor` to fetch the go vendor files
 
 1. Make your changes
 
@@ -105,10 +113,20 @@ GSuite provider.
 
 1. Next time you run `terraform plan` it'll use your updated version
 
-Some useful resources:
-
+### Relevant Google Admin SDK Documentation
+#### General
 * http://google.golang.org/api/admin/directory/v1
 * https://developers.google.com/admin-sdk/directory/v1/reference/
+
+#### Schema Types
+* https://developers.google.com/admin-sdk/directory/v1/reference/users
+* https://developers.google.com/admin-sdk/directory/v1/reference/groups
+* https://developers.google.com/admin-sdk/directory/v1/reference/schemas
+
+When using a service account, make sure to add:
+`https://www.googleapis.com/auth/admin.directory.userschema`
+to the `oauth_scopes` list, otherwise you will be missing permissions to manage
+user schemas.
 
 ## Notes
 

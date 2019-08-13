@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
-
 	directory "google.golang.org/api/admin/directory/v1"
 )
 
@@ -21,38 +20,41 @@ func resourceGroup() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"email": &schema.Schema{
+			"email": {
 				Type:     schema.TypeString,
 				Required: true,
+				StateFunc: func(val interface{}) string {
+					return strings.ToLower(val.(string))
+				},
 			},
 
-			"name": &schema.Schema{
+			"aliases": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+
+			"name": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"description": &schema.Schema{
+			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"direct_members_count": &schema.Schema{
+			"direct_members_count": {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
 
-			"admin_created": &schema.Schema{
+			"admin_created": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"aliases": &schema.Schema{
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-
-			"non_editable_aliases": &schema.Schema{
+			"non_editable_aliases": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -86,7 +88,34 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error creating group: %s", err)
+		return fmt.Errorf("[ERROR] Error creating group: %s", err)
+	}
+
+	// Handle group aliases
+	aliasesCount := d.Get("aliases.#").(int)
+	for i := 0; i < aliasesCount; i++ {
+		cfgAlias := d.Get(fmt.Sprintf("aliases.%d", i)).(string)
+		err = retry(func() error {
+			alias := &directory.Alias{
+				Alias: cfgAlias,
+			}
+			_, err = config.directory.Groups.Aliases.Insert(d.Id(), alias).Do()
+			return err
+		})
+	}
+
+	if err != nil {
+		return fmt.Errorf("[ERROR] Error creating group aliases: %s", err)
+	}
+
+	// Try to read the group, retrying for 404's
+	err = retryNotFound(func() error {
+		group, err = config.directory.Groups.Get(createdGroup.Id).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("[ERROR] Taking too long to create this group: %s", err)
 	}
 
 	d.SetId(createdGroup.Id)
@@ -139,7 +168,47 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error updating group: %s", err)
+		return fmt.Errorf("[ERROR] Error updating group: %s", err)
+	}
+
+	// Handle group aliases
+	var aliasesResponse *directory.Aliases
+	err = retry(func() error {
+		aliasesResponse, err = config.directory.Groups.Aliases.List(d.Id()).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("[ERROR] Could not list group aliases: %s", err)
+	}
+
+	for _, v := range aliasesResponse.Aliases {
+		c, ok := v.(map[string]interface{})
+		if ok {
+			alias := c["alias"].(string)
+			log.Printf("[DEBUG] Removing alias: %s", alias)
+			err = config.directory.Groups.Aliases.Delete(d.Id(), alias).Do()
+		}
+	}
+
+	if err != nil {
+		return fmt.Errorf("[ERROR] Error removing group aliases: %s", err)
+	}
+
+	aliasesCount := d.Get("aliases.#").(int)
+	for i := 0; i < aliasesCount; i++ {
+		cfgAlias := d.Get(fmt.Sprintf("aliases.%d", i)).(string)
+		err = retry(func() error {
+			alias := &directory.Alias{
+				Alias: cfgAlias,
+			}
+			_, err = config.directory.Groups.Aliases.Insert(d.Id(), alias).Do()
+			return err
+		})
+	}
+
+	if err != nil {
+		return fmt.Errorf("[ERROR] Error creating group aliases: %s", err)
 	}
 
 	log.Printf("[INFO] Updated group: %s", updatedGroup.Email)
@@ -165,6 +234,8 @@ func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("admin_created", group.AdminCreated)
 	d.Set("aliases", group.Aliases)
 	d.Set("non_editable_aliases", group.NonEditableAliases)
+	d.Set("description", group.Description)
+	d.Set("name", group.Name)
 
 	return nil
 }
@@ -178,7 +249,7 @@ func resourceGroupDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("Error deleting group: %s", err)
+		return fmt.Errorf("[ERROR] Error deleting group: %s", err)
 	}
 
 	d.SetId("")
@@ -190,9 +261,8 @@ func resourceGroupImporter(d *schema.ResourceData, meta interface{}) ([]*schema.
 	config := meta.(*Config)
 
 	id, err := config.directory.Groups.Get(d.Id()).Do()
-
 	if err != nil {
-		return nil, fmt.Errorf("Error fetching group. Make sure the group exists: %s ", err)
+		return nil, fmt.Errorf("[ERROR] Error fetching group. Make sure the group exists: %s ", err)
 	}
 
 	d.SetId(id.Id)

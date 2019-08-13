@@ -2,11 +2,13 @@ package gsuite
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"runtime"
+	"strings"
 
-	"encoding/json"
 	"github.com/hashicorp/terraform/helper/logging"
 	"github.com/hashicorp/terraform/helper/pathorcontents"
 	"github.com/hashicorp/terraform/terraform"
@@ -14,13 +16,13 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 	directory "google.golang.org/api/admin/directory/v1"
-	"net/http"
-	"strings"
+	groupSettings "google.golang.org/api/groupssettings/v1"
 )
 
 var defaultOauthScopes = []string{
 	directory.AdminDirectoryGroupScope,
 	directory.AdminDirectoryUserScope,
+	directory.AdminDirectoryUserschemaScope,
 }
 
 // Config is the structure used to instantiate the GSuite provider.
@@ -31,14 +33,19 @@ type Config struct {
 	// See https://developers.google.com/admin-sdk/directory/v1/guides/delegation
 	ImpersonatedUserEmail string
 
+	CustomerId string
+
 	OauthScopes []string
 
 	directory *directory.Service
+
+	groupSettings *groupSettings.Service
 }
 
 // loadAndValidate loads the application default credentials from the
 // environment and creates a client for communicating with Google APIs.
 func (c *Config) loadAndValidate() error {
+	log.Println("[INFO] Building gsuite client config structure")
 	var account accountFile
 
 	oauthScopes := c.OauthScopes
@@ -100,6 +107,14 @@ func (c *Config) loadAndValidate() error {
 	}
 	directorySvc.UserAgent = userAgent
 	c.directory = directorySvc
+
+	// Create the groupSettings service.
+	groupSettingsSvc, err := groupSettings.New(client)
+	if err != nil {
+		return nil
+	}
+	groupSettingsSvc.UserAgent = userAgent
+	c.groupSettings = groupSettingsSvc
 
 	return nil
 }

@@ -6,67 +6,25 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
-
+	"github.com/pkg/errors"
 	directory "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/googleapi"
 )
-
-var googleLookup = map[string]string{
-	"aliases":                    "Aliases",
-	"agreed_to_terms":            "AgreedToTerms",
-	"change_password_next_login": "ChangePasswordAtNextLogin",
-	"creation_time":              "CreationTime",
-	"customer_id":                "CustomerId",
-	"deletion_time":              "DeletionTime",
-	"etag":                       "Etag",
-	"include_in_global_list": "IncludeInGlobalAddressList",
-	"is_ip_whitelisted":      "IpWhitelisted",
-	"is_admin":               "IsAdmin",
-	"is_delegated_admin":     "IsDelegatedAdmin",
-	"2s_enforced":            "IsEnforcedIn2Sv",
-	"2s_enrolled":            "IsEnrolledIn2Sv",
-	"is_mailbox_setup":       "IsMailboxSetup",
-	"last_login_time":        "LastLoginTime",
-	"password":               "Password",
-	"hash_function":          "HashFunction",
-	"primary_email":          "PrimaryEmail",
-	"is_suspended":           "Suspended",
-	"suspension_reason":      "SuspensionReason",
-}
 
 func flattenUserName(name *directory.UserName) map[string]interface{} {
 	return map[string]interface{}{
 		"family_name": name.FamilyName,
-		"full_name":   name.FullName,
 		"given_name":  name.GivenName,
 	}
 }
 
-func flattenUserPosixAccounts(posixAccounts []*directory.UserPosixAccount) []map[string]interface{} {
-	result := make([]map[string]interface{}, len(posixAccounts))
-	for i, posixAccount := range posixAccounts {
-		result[i] = map[string]interface{}{
-			"account_id":     posixAccount.AccountId,
-			"gecos":          posixAccount.Gecos,
-			"gid":            posixAccount.Gid,
-			"home_directory": posixAccount.HomeDirectory,
-			"system_id":      posixAccount.SystemId,
-			"primary":        posixAccount.Primary,
-			"shell":          posixAccount.Shell,
-			"uid":            posixAccount.Uid,
-			"username":       posixAccount.Username,
-		}
-	}
-	return result
-}
-
-func flattenUserSshPublicKeys(sshPublicKeys []*directory.UserSshPublicKey) []map[string]interface{} {
-	result := make([]map[string]interface{}, len(sshPublicKeys))
-	for i, sshPublicKey := range sshPublicKeys {
-		result[i] = map[string]interface{}{
-			"expiration_time_usec": sshPublicKey.ExpirationTimeUsec,
-			"key":         sshPublicKey.Key,
-			"fingerprint": sshPublicKey.Fingerprint,
-		}
+func flattenCustomSchema(schema map[string]googleapi.RawMessage) []map[string]interface{} {
+	result := make([]map[string]interface{}, 0, len(schema))
+	for key, value := range schema {
+		customSchemaMap := make(map[string]interface{})
+		customSchemaMap["name"] = key
+		customSchemaMap["value"] = string(value)
+		result = append(result, customSchemaMap)
 	}
 	return result
 }
@@ -82,99 +40,95 @@ func resourceUser() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"aliases": &schema.Schema{
+			"aliases": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
-			"agreed_to_terms": &schema.Schema{
+			"agreed_to_terms": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"change_password_next_login": &schema.Schema{
+			"change_password_next_login": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"creation_time": &schema.Schema{
+			"creation_time": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"customer_id": &schema.Schema{
+			"customer_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"deletion_time": &schema.Schema{
+			"deletion_time": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"etag": &schema.Schema{
+			"etag": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"include_in_global_list": &schema.Schema{
+			"include_in_global_list": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
 			},
 
-			"is_ip_whitelisted": &schema.Schema{
+			"is_ip_whitelisted": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"is_admin": &schema.Schema{
+			"is_admin": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"is_delegated_admin": &schema.Schema{
+			"is_delegated_admin": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"2s_enforced": &schema.Schema{
+			"2s_enforced": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"2s_enrolled": &schema.Schema{
+			"2s_enrolled": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"is_mailbox_setup": &schema.Schema{
+			"is_mailbox_setup": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
 
-			"last_login_time": &schema.Schema{
+			"last_login_time": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"name": &schema.Schema{
-				Type:     schema.TypeList,
+			"name": {
+				Type:     schema.TypeMap,
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"family_name": &schema.Schema{
+						"family_name": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"full_name": &schema.Schema{
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"given_name": &schema.Schema{
+						"given_name": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
@@ -182,56 +136,56 @@ func resourceUser() *schema.Resource {
 				},
 			},
 
-			"password": &schema.Schema{
+			"password": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
 			// md5, sha-1 and crypt
-			"hash_function": &schema.Schema{
+			"hash_function": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"posix_accounts": &schema.Schema{
+			"posix_accounts": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"account_id": &schema.Schema{
+						"account_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"gecos": &schema.Schema{
+						"gecos": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"gid": &schema.Schema{
+						"gid": {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"home_directory": &schema.Schema{
+						"home_directory": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"shell": &schema.Schema{
+						"shell": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"system_id": &schema.Schema{
+						"system_id": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"primary": &schema.Schema{
+						"primary": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
 						},
-						"uid": &schema.Schema{
+						"uid": {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"username": &schema.Schema{
+						"username": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
@@ -239,25 +193,34 @@ func resourceUser() *schema.Resource {
 				},
 			},
 
-			"primary_email": &schema.Schema{
+			"primary_email": {
 				Type:     schema.TypeString,
 				Required: true,
+				StateFunc: func(val interface{}) string {
+					return strings.ToLower(val.(string))
+				},
 			},
 
-			"ssh_public_keys": &schema.Schema{
+			"org_unit_path": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "/",
+			},
+
+			"ssh_public_keys": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"expiration_time_usec": &schema.Schema{
+						"expiration_time_usec": {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"key": &schema.Schema{
+						"key": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"fingerprint": &schema.Schema{
+						"fingerprint": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -265,15 +228,32 @@ func resourceUser() *schema.Resource {
 				},
 			},
 
-			"is_suspended": &schema.Schema{
+			"is_suspended": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 			},
 
-			"suspension_reason": &schema.Schema{
+			"suspension_reason": {
 				Type:     schema.TypeString,
 				Optional: true,
+			},
+
+			"custom_schema": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"value": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -291,6 +271,10 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	if v, ok := d.GetOk("primary_email"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "primary_email", v.(string))
 		user.PrimaryEmail = strings.ToLower(v.(string))
+	}
+	if v, ok := d.GetOk("org_unit_path"); ok {
+		log.Printf("[DEBUG] Setting %s: %s", "org_unit_path", v.(string))
+		user.OrgUnitPath = v.(string)
 	}
 	if v, ok := d.GetOk("password"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "password", v.(string))
@@ -322,24 +306,86 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		user.Suspended = v.(bool)
 	}
 
-	userSshs := []*directory.UserSshPublicKey{}
+	userSSHs := []*directory.UserSshPublicKey{}
 	sshCount := d.Get("ssh_public_keys.#").(int)
 	for i := 0; i < sshCount; i++ {
 		sshConfig := d.Get(fmt.Sprintf("ssh_public_keys.%d", i)).(map[string]interface{})
-		userSsh := &directory.UserSshPublicKey{}
+		userSSH := &directory.UserSshPublicKey{}
 
 		if v, ok := sshConfig["expiration_time_usec"]; ok {
 			log.Printf("[DEBUG] Setting ssh %d expiration_time_usec: %v", i, int64(v.(int)))
-			userSsh.ExpirationTimeUsec = int64(v.(int))
+			userSSH.ExpirationTimeUsec = int64(v.(int))
 		}
 		if v, ok := sshConfig["key"]; ok {
 			log.Printf("[DEBUG] Setting ssh %d key: %s", i, v.(string))
-			userSsh.Key = v.(string)
+			userSSH.Key = v.(string)
 		}
 
-		userSshs = append(userSshs, userSsh)
+		userSSHs = append(userSSHs, userSSH)
 	}
-	user.SshPublicKeys = userSshs
+	user.SshPublicKeys = userSSHs
+
+	customSchemas := map[string]googleapi.RawMessage{}
+	for i := 0; i < d.Get("custom_schema.#").(int); i++ {
+		entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
+		customSchemas[entry["name"].(string)] = []byte(entry["value"].(string))
+	}
+	if len(customSchemas) > 0 {
+		user.CustomSchemas = customSchemas
+	}
+
+	user.SshPublicKeys = userSSHs
+
+	userNamePrefix := "name"
+	userName := &directory.UserName{
+		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
+		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
+	}
+	user.Name = userName
+
+	var createdUser *directory.User
+	var err error
+	err = retry(func() error {
+		createdUser, err = config.directory.Users.Insert(user).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("Error creating user: %s", err)
+	}
+
+	// Try to read the user, retrying for 404's
+	err = retryNotFound(func() error {
+		user, err = config.directory.Users.Get(createdUser.Id).Do()
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("[ERROR] Taking too long to create this user: %s", err)
+	}
+
+	if user.Suspended == false || user.SuspensionReason != "" {
+		log.Printf("[ERROR] Your newly created user has been automatically suspended by Google: %s", createdUser.PrimaryEmail)
+		log.Printf("[ERROR] Simply log in to the account, verify and accept the terms to unsuspend the account.")
+	}
+
+	// Now set POSIX data, after the account has been created.
+	err = userPosixCreate(d, createdUser.Id, meta)
+
+	if err != nil {
+		log.Printf("[ERROR] Failed to create POSIX data! The user has been created but the terraform operation failed: %s", err)
+		log.Printf("[ERROR] Not failing on this operation, your POSIX data has not been set. A next apply will retry.")
+	}
+
+	d.SetId(createdUser.Id)
+	log.Printf("[INFO] Created user: %s", createdUser.PrimaryEmail)
+	return resourceUserRead(d, meta)
+}
+
+func userPosixCreate(d *schema.ResourceData, userID string, meta interface{}) error {
+	config := meta.(*Config)
+
+	user := &directory.User{}
 
 	userPosixs := []*directory.UserPosixAccount{}
 	posixCount := d.Get("posix_accounts.#").(int)
@@ -384,27 +430,27 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	user.PosixAccounts = userPosixs
 
-	userNamePrefix := "name.0"
+	userNamePrefix := "name"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
 		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
 	}
 	user.Name = userName
 
-	var createdUser *directory.User
 	var err error
 	err = retry(func() error {
-		createdUser, err = config.directory.Users.Insert(user).Do()
+		_, err = config.directory.Users.Update(userID, user).Do()
+		if e, ok := err.(*googleapi.Error); ok {
+			return errors.Wrap(e, e.Body)
+		}
 		return err
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error creating user: %s", err)
+		return fmt.Errorf("Error updating user: %s", err)
 	}
 
-	d.SetId(createdUser.Id)
-	log.Printf("[INFO] Created user: %s", createdUser.PrimaryEmail)
-	return resourceUserRead(d, meta)
+	return nil
 }
 
 func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -433,16 +479,23 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 			nullFields = append(nullFields, "primary_email")
 		}
 	}
-	if d.HasChange("password") {
-		if v, ok := d.GetOk("password"); ok {
-			log.Printf("[DEBUG] Updating user password: %s", d.Get("password").(string))
-			user.Password = v.(string)
+
+	if d.HasChange("org_unit_path") {
+		if v, ok := d.GetOk("org_unit_path"); ok {
+			log.Printf("[DEBUG] Updating user org_unit_path: %s", d.Get("org_unit_path").(string))
+			user.OrgUnitPath = v.(string)
 		} else {
-			log.Printf("[DEBUG] Removing user password")
-			user.Password = ""
-			nullFields = append(nullFields, "password")
+			log.Printf("[DEBUG] Removing user org_unit_path")
+			user.OrgUnitPath = ""
+			nullFields = append(nullFields, "org_unit_path")
 		}
 	}
+
+	// We do not control the password in terraform, so drop from update
+	log.Printf("[DEBUG] Removing user password")
+	user.Password = ""
+	nullFields = append(nullFields, "password")
+
 	if d.HasChange("hash_function") {
 		if v, ok := d.GetOk("hash_function"); ok {
 			log.Printf("[DEBUG] Updating user hash_function: %s", d.Get("hash_function").(string))
@@ -506,24 +559,24 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("ssh_public_keys") {
-		userSshs := []*directory.UserSshPublicKey{}
+		userSSHs := []*directory.UserSshPublicKey{}
 		sshCount := d.Get("ssh_public_keys.#").(int)
 		for i := 0; i < sshCount; i++ {
 			sshConfig := d.Get(fmt.Sprintf("ssh_public_keys.%d", i)).(map[string]interface{})
-			userSsh := &directory.UserSshPublicKey{}
+			userSSH := &directory.UserSshPublicKey{}
 
 			if v, ok := sshConfig["expiration_time_usec"]; ok {
 				log.Printf("[DEBUG] Setting ssh %d expiration_time_usec: %v", i, int64(v.(int)))
-				userSsh.ExpirationTimeUsec = int64(v.(int))
+				userSSH.ExpirationTimeUsec = int64(v.(int))
 			}
 			if v, ok := sshConfig["key"]; ok {
 				log.Printf("[DEBUG] Setting ssh %d key: %s", i, v.(string))
-				userSsh.Key = v.(string)
+				userSSH.Key = v.(string)
 			}
 
-			userSshs = append(userSshs, userSsh)
+			userSSHs = append(userSSHs, userSSH)
 		}
-		user.SshPublicKeys = userSshs
+		user.SshPublicKeys = userSSHs
 	}
 
 	if d.HasChange("posix_accounts") {
@@ -571,7 +624,16 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		user.PosixAccounts = userPosixs
 	}
 
-	userNamePrefix := "name.0"
+	if d.HasChange("custom_schema") {
+		customSchemas := map[string]googleapi.RawMessage{}
+		for i := 0; i < d.Get("custom_schema.#").(int); i++ {
+			entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
+			customSchemas[entry["name"].(string)] = []byte(entry["value"].(string))
+		}
+		user.CustomSchemas = customSchemas
+	}
+
+	userNamePrefix := "name"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
 		GivenName:  d.Get(userNamePrefix + ".given_name").(string),
@@ -586,11 +648,15 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	var err error
 	err = retry(func() error {
 		updatedUser, err = config.directory.Users.Update(d.Id(), user).Do()
+		if e, ok := err.(*googleapi.Error); ok {
+			return errors.Wrap(e, e.Body)
+		}
 		return err
 	})
 
 	if err != nil {
-		return fmt.Errorf("Error updating user: %s", err)
+		log.Printf("[WARN] Please note, a persistent 503 backend error can mean you need to change your posix values to be unique.")
+		return fmt.Errorf("[ERROR] Error updating user: %s", err)
 	}
 
 	log.Printf("[INFO] Updated user: %s", updatedUser.PrimaryEmail)
@@ -603,17 +669,21 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	var user *directory.User
 	var err error
 	err = retry(func() error {
-		user, err = config.directory.Users.Get(d.Id()).Do()
+		user, err = config.directory.Users.Get(d.Id()).Projection("full").Do()
+		if user != nil && user.Name == nil {
+			return errors.New("Eventual consistency. Please try again")
+		}
 		return err
 	})
 
 	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Get("name").(string)))
+		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Id()))
 	}
 
 	d.SetId(user.Id)
 	d.Set("deletion_time", user.DeletionTime)
 	d.Set("primary_email", user.PrimaryEmail)
+	d.Set("org_unit_path", user.OrgUnitPath)
 	d.Set("password", user.Password)
 	d.Set("hash_function", user.HashFunction)
 	d.Set("suspension_reason", user.SuspensionReason)
@@ -636,6 +706,10 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", flattenUserName(user.Name))
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
+
+	if err = d.Set("custom_schema", flattenCustomSchema(user.CustomSchemas)); err != nil {
+		return fmt.Errorf("Error setting custom_schema in state: %s", err.Error())
+	}
 
 	return nil
 }
@@ -660,7 +734,7 @@ func resourceUserDelete(d *schema.ResourceData, meta interface{}) error {
 func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
 
-	id, err := config.directory.Users.Get(d.Id()).Do()
+	id, err := config.directory.Users.Get(d.Id()).Projection("full").Do()
 
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching user. Make sure the user exists: %s ", err)
@@ -669,6 +743,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.SetId(id.Id)
 	d.Set("deletion_time", id.DeletionTime)
 	d.Set("primary_email", id.PrimaryEmail)
+	d.Set("org_unit_path", id.OrgUnitPath)
 	d.Set("password", id.Password)
 	d.Set("hash_function", id.HashFunction)
 	d.Set("suspension_reason", id.SuspensionReason)
@@ -691,6 +766,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("name", flattenUserName(id.Name))
 	d.Set("posix_accounts", id.PosixAccounts)
 	d.Set("ssh_public_keys", id.SshPublicKeys)
+	d.Set("custom_schema", flattenCustomSchema(id.CustomSchemas))
 
 	return []*schema.ResourceData{d}, nil
 }

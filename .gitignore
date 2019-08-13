@@ -16,6 +16,7 @@
 .glide/
 
 # Terraform & Provider specific
+backend.tf
 terraform-provider-*
 .terraform
 terraform.tfstate*
