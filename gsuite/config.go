@@ -76,7 +76,7 @@ func (c *Config) loadAndValidate() error {
 			Email:      account.ClientEmail,
 			PrivateKey: []byte(account.PrivateKey),
 			Scopes:     oauthScopes,
-			TokenURL:   "https://accounts.google.com/o/oauth2/token",
+			TokenURL:   "https://oauth2.googleapis.com/token",
 		}
 
 		conf.Subject = c.ImpersonatedUserEmail
