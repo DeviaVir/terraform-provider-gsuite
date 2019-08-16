@@ -36,4 +36,9 @@ resource "gsuite_user" "developer" {
     system_id      = "uid"
     username       = "chase"
   }
+
+  external_ids {
+    type  = "organization"
+    value = "1234"
+  }
 }
