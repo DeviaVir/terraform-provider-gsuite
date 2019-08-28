@@ -1,8 +1,10 @@
 package gsuite
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -11,6 +13,21 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+func normalizeJSON(jsonString interface{}) (error, string) {
+	if jsonString == nil || jsonString == "" {
+		return nil, ""
+	}
+
+	var j interface{}
+	err := json.Unmarshal([]byte(jsonString.(string)), &j)
+	if err != nil {
+		return err, ""
+	}
+
+	b, _ := json.Marshal(j)
+	return nil, string(b[:])
+}
+
 func flattenUserName(name *directory.UserName) map[string]interface{} {
 	return map[string]interface{}{
 		"family_name": name.FamilyName,
@@ -18,15 +35,33 @@ func flattenUserName(name *directory.UserName) map[string]interface{} {
 	}
 }
 
-func flattenCustomSchema(schema map[string]googleapi.RawMessage) []map[string]interface{} {
+func flattenCustomSchema(schema map[string]googleapi.RawMessage) (error, []map[string]interface{}) {
 	result := make([]map[string]interface{}, 0, len(schema))
-	for key, value := range schema {
+
+	// We need to sort the keys so that we won't constantly be replacing resources due to map
+	// randomized key order
+	keys := make([]string, 0, len(result))
+	for key := range schema {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
 		customSchemaMap := make(map[string]interface{})
 		customSchemaMap["name"] = key
-		customSchemaMap["value"] = string(value)
+
+		err, value := normalizeJSON(string(schema[key]))
+		if err != nil {
+			//bail and return error encountered
+			return err, result
+		}
+
+		customSchemaMap["value"] = value
 		result = append(result, customSchemaMap)
 	}
-	return result
+
+	//Everything was fine, return the map and nil for the error
+	return nil, result
 }
 
 func resourceUser() *schema.Resource {
@@ -707,7 +742,12 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
 
-	if err = d.Set("custom_schema", flattenCustomSchema(user.CustomSchemas)); err != nil {
+	err, flattenedCustomSchema := flattenCustomSchema(user.CustomSchemas)
+	if err != nil {
+		return err
+	}
+
+	if err = d.Set("custom_schema", flattenedCustomSchema); err != nil {
 		return fmt.Errorf("Error setting custom_schema in state: %s", err.Error())
 	}
 
@@ -766,7 +806,13 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("name", flattenUserName(id.Name))
 	d.Set("posix_accounts", id.PosixAccounts)
 	d.Set("ssh_public_keys", id.SshPublicKeys)
-	d.Set("custom_schema", flattenCustomSchema(id.CustomSchemas))
+
+	err, flattenedCustomSchema := flattenCustomSchema(id.CustomSchemas)
+	if err != nil {
+		return []*schema.ResourceData{d}, err
+	}
+
+	d.Set("custom_schema", flattenedCustomSchema)
 
 	return []*schema.ResourceData{d}, nil
 }
