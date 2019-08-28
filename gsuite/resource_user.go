@@ -863,7 +863,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("name", flattenUserName(id.Name))
 	d.Set("posix_accounts", id.PosixAccounts)
 	d.Set("ssh_public_keys", id.SshPublicKeys)
-  d.Set("external_ids", id.ExternalIds)
+	d.Set("external_ids", id.ExternalIds)
   
 	err, flattenedCustomSchema := flattenCustomSchema(id.CustomSchemas)
 	if err != nil {
