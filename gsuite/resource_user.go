@@ -290,6 +290,26 @@ func resourceUser() *schema.Resource {
 					},
 				},
 			},
+			"external_ids": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"custom_type": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"type": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"value": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -368,6 +388,23 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	if len(customSchemas) > 0 {
 		user.CustomSchemas = customSchemas
 	}
+
+	externalIDs := []*directory.UserExternalId{}
+	for i := 0; i < d.Get("external_ids.#").(int); i++ {
+		entry := d.Get(fmt.Sprintf("external_ids.%d", i)).(map[string]interface{})
+		externalID := &directory.UserExternalId{}
+		if v, ok := entry["custom_type"]; ok {
+			externalID.CustomType = v.(string)
+		}
+		if v, ok := entry["type"]; ok {
+			externalID.Type = v.(string)
+		}
+		if v, ok := entry["value"]; ok {
+			externalID.Value = v.(string)
+		}
+		externalIDs = append(externalIDs, externalID)
+	}
+	user.ExternalIds = externalIDs
 
 	user.SshPublicKeys = userSSHs
 
@@ -668,6 +705,25 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		user.CustomSchemas = customSchemas
 	}
 
+	if d.HasChange("external_ids") {
+		externalIDs := []*directory.UserExternalId{}
+		for i := 0; i < d.Get("external_ids.#").(int); i++ {
+			entry := d.Get(fmt.Sprintf("external_ids.%d", i)).(map[string]interface{})
+			externalID := &directory.UserExternalId{}
+			if v, ok := entry["custom_type"]; ok {
+				externalID.CustomType = v.(string)
+			}
+			if v, ok := entry["type"]; ok {
+				externalID.Type = v.(string)
+			}
+			if v, ok := entry["value"]; ok {
+				externalID.Value = v.(string)
+			}
+			externalIDs = append(externalIDs, externalID)
+		}
+		user.ExternalIds = externalIDs
+	}
+
 	userNamePrefix := "name"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
@@ -741,6 +797,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", flattenUserName(user.Name))
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
+	d.Set("external_ids", user.ExternalIds)
 
 	err, flattenedCustomSchema := flattenCustomSchema(user.CustomSchemas)
 	if err != nil {
@@ -806,7 +863,8 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("name", flattenUserName(id.Name))
 	d.Set("posix_accounts", id.PosixAccounts)
 	d.Set("ssh_public_keys", id.SshPublicKeys)
-
+	d.Set("external_ids", id.ExternalIds)
+  
 	err, flattenedCustomSchema := flattenCustomSchema(id.CustomSchemas)
 	if err != nil {
 		return []*schema.ResourceData{d}, err
