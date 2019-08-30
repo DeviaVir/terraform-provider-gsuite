@@ -172,7 +172,7 @@ func resourceGroupSettings() *schema.Resource {
 			"who_can_ban_users": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"OWNERS_ONLY", "OWNERS_AND_MANAGERS", "ALL_MEMBERS", ""}, false),
+				ValidateFunc: validation.StringInSlice([]string{"NONE", "OWNERS_ONLY", "OWNERS_AND_MANAGERS", "ALL_MEMBERS", ""}, false),
 				Default:      "OWNERS_AND_MANAGERS",
 			},
 			"who_can_contact_owner": {
