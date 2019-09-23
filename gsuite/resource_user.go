@@ -236,6 +236,22 @@ func resourceUser() *schema.Resource {
 				},
 			},
 
+			"recovery_email": {
+				Type:     schema.TypeString,
+				Required: true,
+				StateFunc: func(val interface{}) string {
+					return strings.ToLower(val.(string))
+				},
+			},
+
+			"recovery_phone": {
+				Type:     schema.TypeString,
+				Required: true,
+				StateFunc: func(val interface{}) string {
+					return strings.ToLower(val.(string))
+				},
+			},
+
 			"org_unit_path": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -326,6 +342,14 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	if v, ok := d.GetOk("primary_email"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "primary_email", v.(string))
 		user.PrimaryEmail = strings.ToLower(v.(string))
+	}
+	if v, ok := d.GetOk("recovery_email"); ok {
+		log.Printf("[DEBUG] Setting %s: %s", "recovery_email", v.(string))
+		user.RecoveryEmail = strings.ToLower(v.(string))
+	}
+	if v, ok := d.GetOk("recovery_phone"); ok {
+		log.Printf("[DEBUG] Setting %s: %s", "recovery_phone", v.(string))
+		user.RecoveryEmail = strings.ToLower(v.(string))
 	}
 	if v, ok := d.GetOk("org_unit_path"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "org_unit_path", v.(string))
@@ -552,6 +576,28 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	if d.HasChange("recovery_email") {
+		if v, ok := d.GetOk("recovery_email"); ok {
+			log.Printf("[DEBUG] Updating user recovery_email: %s", d.Get("recovery_email").(string))
+			user.RecoveryEmail = v.(string)
+		} else {
+			log.Printf("[DEBUG] Removing user recovery_email")
+			user.RecoveryEmail = ""
+			nullFields = append(nullFields, "recovery_email")
+		}
+	}
+
+	if d.HasChange("recovery_phone") {
+		if v, ok := d.GetOk("recovery_phone"); ok {
+			log.Printf("[DEBUG] Updating user recovery_phone: %s", d.Get("recovery_phone").(string))
+			user.RecoveryPhone = v.(string)
+		} else {
+			log.Printf("[DEBUG] Removing user recovery_phone")
+			user.RecoveryPhone = ""
+			nullFields = append(nullFields, "recovery_phone")
+		}
+	}
+
 	if d.HasChange("org_unit_path") {
 		if v, ok := d.GetOk("org_unit_path"); ok {
 			log.Printf("[DEBUG] Updating user org_unit_path: %s", d.Get("org_unit_path").(string))
@@ -774,6 +820,8 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(user.Id)
 	d.Set("deletion_time", user.DeletionTime)
 	d.Set("primary_email", user.PrimaryEmail)
+	d.Set("recovery_email", user.RecoveryEmail)
+	d.Set("recovery_phone", user.RecoveryPhone)
 	d.Set("org_unit_path", user.OrgUnitPath)
 	d.Set("password", user.Password)
 	d.Set("hash_function", user.HashFunction)
@@ -840,6 +888,8 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.SetId(id.Id)
 	d.Set("deletion_time", id.DeletionTime)
 	d.Set("primary_email", id.PrimaryEmail)
+	d.Set("recovery_email", id.RecoveryEmail)
+	d.Set("recovery_phone", id.RecoveryPhone)
 	d.Set("org_unit_path", id.OrgUnitPath)
 	d.Set("password", id.Password)
 	d.Set("hash_function", id.HashFunction)
@@ -864,7 +914,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("posix_accounts", id.PosixAccounts)
 	d.Set("ssh_public_keys", id.SshPublicKeys)
 	d.Set("external_ids", id.ExternalIds)
-  
+
 	err, flattenedCustomSchema := flattenCustomSchema(id.CustomSchemas)
 	if err != nil {
 		return []*schema.ResourceData{d}, err
