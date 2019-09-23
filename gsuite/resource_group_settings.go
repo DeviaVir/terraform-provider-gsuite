@@ -1251,6 +1251,7 @@ func resourceGroupSettingsImporter(d *schema.ResourceData, meta interface{}) ([]
 	d.Set("custom_footer_text", id.CustomFooterText)
 	d.Set("custom_reply_to", id.CustomReplyTo)
 	d.Set("description", id.Description)
+	d.Set("email", id.Email)
 	d.Set("favorite_replies_on_top", id.FavoriteRepliesOnTop)
 	d.Set("include_custom_footer", id.IncludeCustomFooter)
 	d.Set("include_in_global_address_list", id.IncludeInGlobalAddressList)
