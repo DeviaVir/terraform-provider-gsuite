@@ -13,7 +13,7 @@ func TestConfigLoadAndValidate_accountFilePath(t *testing.T) {
 		ImpersonatedUserEmail: "xxx@xxx.xom",
 	}
 
-	err := config.loadAndValidate()
+	err := config.loadAndValidate("0.12")
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
@@ -29,7 +29,7 @@ func TestConfigLoadAndValidate_accountFileJSON(t *testing.T) {
 		ImpersonatedUserEmail: "xxx@xxx.xom",
 	}
 
-	err = config.loadAndValidate()
+	err = config.loadAndValidate("0.12")
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestConfigLoadAndValidate_accountFileJSONInvalid(t *testing.T) {
 		Credentials: "{this is not json}",
 	}
 
-	if config.loadAndValidate() == nil {
+	if config.loadAndValidate("0.12") == nil {
 		t.Fatalf("expected error, but got nil")
 	}
 }
@@ -52,7 +52,7 @@ func TestConfigLoadAndValidate_noImpersonatedEmail(t *testing.T) {
 		ImpersonatedUserEmail: "",
 	}
 
-	err := config.loadAndValidate()
+	err := config.loadAndValidate("0.12")
 	if err == nil {
 		t.Fatalf("error: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestConfigLoadAndValidate_noImpersonatedEmail(t *testing.T) {
 		Credentials: testFakeCredentialsPath,
 	}
 
-	err = config.loadAndValidate()
+	err = config.loadAndValidate("0.12")
 	if err == nil {
 		t.Fatalf("error: %v", err)
 	}
