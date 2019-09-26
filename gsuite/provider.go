@@ -6,13 +6,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
 )
 
 // Provider returns the actual provider instance.
 func Provider() *schema.Provider {
-	return &schema.Provider{
+	p := &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"credentials": {
 				Type:     schema.TypeString,
@@ -54,8 +54,19 @@ func Provider() *schema.Provider {
 			"gsuite_user":           resourceUser(),
 			"gsuite_user_schema":    resourceUserSchema(),
 		},
-		ConfigureFunc: providerConfigure,
 	}
+
+	p.ConfigureFunc = func(d *schema.ResourceData) (interface{}, error) {
+		terraformVersion := p.TerraformVersion
+		if terraformVersion == "" {
+			// Terraform 0.12 introduced this field to the protocol
+			// We can therefore assume that if it's missing it's 0.10 or 0.11
+			terraformVersion = "0.11+compatible"
+		}
+		return providerConfigure(d, terraformVersion)
+	}
+
+	return p
 }
 
 func oauthScopesFromConfigOrDefault(oauthScopesSet *schema.Set) []string {
@@ -67,7 +78,7 @@ func oauthScopesFromConfigOrDefault(oauthScopesSet *schema.Set) []string {
 	return oauthScopes
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(d *schema.ResourceData, terraformVersion string) (interface{}, error) {
 	var impersonatedUserEmail string
 	var customerID string
 
@@ -100,7 +111,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		CustomerId:            customerID,
 	}
 
-	if err := config.loadAndValidate(); err != nil {
+	if err := config.loadAndValidate(terraformVersion); err != nil {
 		return nil, errors.Wrap(err, "failed to load config")
 	}
 

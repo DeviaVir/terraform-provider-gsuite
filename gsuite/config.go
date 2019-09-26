@@ -9,9 +9,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/hashicorp/terraform/helper/logging"
-	"github.com/hashicorp/terraform/helper/pathorcontents"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/logging"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/pathorcontents"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
@@ -44,7 +43,7 @@ type Config struct {
 
 // loadAndValidate loads the application default credentials from the
 // environment and creates a client for communicating with Google APIs.
-func (c *Config) loadAndValidate() error {
+func (c *Config) loadAndValidate(terraformVersion string) error {
 	log.Println("[INFO] Building gsuite client config structure")
 	var account accountFile
 
@@ -98,7 +97,7 @@ func (c *Config) loadAndValidate() error {
 	// just a nice thing to do.
 	client.Transport = logging.NewTransport("Google", client.Transport)
 	userAgent := fmt.Sprintf("(%s %s) Terraform/%s",
-		runtime.GOOS, runtime.GOARCH, terraform.VersionString())
+		runtime.GOOS, runtime.GOARCH, terraformVersion)
 
 	// Create the directory service.
 	directorySvc, err := directory.New(client)
