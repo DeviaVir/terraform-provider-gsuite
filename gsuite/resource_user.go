@@ -238,7 +238,7 @@ func resourceUser() *schema.Resource {
 
 			"recovery_email": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				StateFunc: func(val interface{}) string {
 					return strings.ToLower(val.(string))
 				},
@@ -246,7 +246,7 @@ func resourceUser() *schema.Resource {
 
 			"recovery_phone": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				StateFunc: func(val interface{}) string {
 					return strings.ToLower(val.(string))
 				},
@@ -349,7 +349,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	if v, ok := d.GetOk("recovery_phone"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "recovery_phone", v.(string))
-		user.RecoveryEmail = strings.ToLower(v.(string))
+		user.RecoveryPhone = strings.ToLower(v.(string))
 	}
 	if v, ok := d.GetOk("org_unit_path"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "org_unit_path", v.(string))
