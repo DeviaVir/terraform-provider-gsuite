@@ -1219,17 +1219,6 @@ func resourceGroupSettingsRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceGroupSettingsDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(*Config)
-
-	var err error
-	err = retry(func() error {
-		err = config.directory.Groups.Delete(d.Id()).Do()
-		return err
-	})
-	if err != nil {
-		return fmt.Errorf("[ERROR] Error deleting group: %s", err)
-	}
-
 	d.SetId("")
 	return nil
 }
