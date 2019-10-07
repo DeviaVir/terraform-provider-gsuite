@@ -16,6 +16,7 @@ import (
 	"golang.org/x/oauth2/jwt"
 	directory "google.golang.org/api/admin/directory/v1"
 	groupSettings "google.golang.org/api/groupssettings/v1"
+	"google.golang.org/api/option"
 )
 
 var defaultOauthScopes = []string{
@@ -99,18 +100,20 @@ func (c *Config) loadAndValidate(terraformVersion string) error {
 	userAgent := fmt.Sprintf("(%s %s) Terraform/%s",
 		runtime.GOOS, runtime.GOARCH, terraformVersion)
 
+	context := context.Background()
+
 	// Create the directory service.
-	directorySvc, err := directory.New(client)
+	directorySvc, err := directory.NewService(context, option.WithHTTPClient(client))
 	if err != nil {
-		return nil
+		return err
 	}
 	directorySvc.UserAgent = userAgent
 	c.directory = directorySvc
 
 	// Create the groupSettings service.
-	groupSettingsSvc, err := groupSettings.New(client)
+	groupSettingsSvc, err := groupSettings.NewService(context, option.WithHTTPClient(client))
 	if err != nil {
-		return nil
+		return err
 	}
 	groupSettingsSvc.UserAgent = userAgent
 	c.groupSettings = groupSettingsSvc
