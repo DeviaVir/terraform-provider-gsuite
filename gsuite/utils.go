@@ -48,14 +48,14 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 		rand.Seed(time.Now().UnixNano())
 		randomNumberMiliseconds := rand.Intn(1001)
 		if retryPassDuplicate {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
 				log.Printf("[DEBUG] Retrying quota/server error code...")
 				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
 				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
 		} else {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 409 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 409 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
 				log.Printf("[DEBUG] Retrying quota/server error code...")
 				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
 				wait = wait * 2
