@@ -5,6 +5,7 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -26,34 +27,46 @@ func handleNotFoundError(err error, d *schema.ResourceData, resource string) err
 }
 
 func retry(retryFunc func() error) error {
-	return retryTime(retryFunc, 1, false, false)
+	return retryTime(retryFunc, 4, false, false)
 }
 
 func retryNotFound(retryFunc func() error) error {
-	return retryTime(retryFunc, 1, true, false)
+	return retryTime(retryFunc, 4, true, false)
 }
 
 func retryPassDuplicate(retryFunc func() error) error {
-	return retryTime(retryFunc, 1, true, true)
+	return retryTime(retryFunc, 4, true, true)
 }
 
 func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPassDuplicate bool) error {
+	wait := 1
 	return resource.Retry(time.Duration(minutes)*time.Minute, func() *resource.RetryError {
 		err := retryFunc()
 		if err == nil {
 			return nil
 		}
+		rand.Seed(time.Now().UnixNano())
+		randomNumberMiliseconds := rand.Intn(1001)
 		if retryPassDuplicate {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+				log.Printf("[DEBUG] Retrying quota/server error code...")
+				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
 		} else {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 409 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 409 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+				log.Printf("[DEBUG] Retrying quota/server error code...")
+				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
 		}
 		if retryNotFound {
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 404) {
+				log.Printf("[DEBUG] Retrying for eventual consistency...")
+				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
 		}
