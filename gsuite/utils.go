@@ -26,16 +26,16 @@ func handleNotFoundError(err error, d *schema.ResourceData, resource string) err
 	return fmt.Errorf("Error reading %s: %s", resource, err)
 }
 
-func retry(retryFunc func() error) error {
-	return retryTime(retryFunc, 4, false, false)
+func retry(retryFunc func() error, minutes int) error {
+	return retryTime(retryFunc, minutes, false, false)
 }
 
-func retryNotFound(retryFunc func() error) error {
-	return retryTime(retryFunc, 4, true, false)
+func retryNotFound(retryFunc func() error, minutes int) error {
+	return retryTime(retryFunc, minutes, true, false)
 }
 
-func retryPassDuplicate(retryFunc func() error) error {
-	return retryTime(retryFunc, 4, true, true)
+func retryPassDuplicate(retryFunc func() error, minutes int) error {
+	return retryTime(retryFunc, minutes, true, true)
 }
 
 func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPassDuplicate bool) error {

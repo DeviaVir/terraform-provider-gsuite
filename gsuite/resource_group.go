@@ -85,7 +85,7 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		createdGroup, err = config.directory.Groups.Insert(group).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error creating group: %s", err)
@@ -101,7 +101,7 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 			}
 			_, err = config.directory.Groups.Aliases.Insert(d.Id(), alias).Do()
 			return err
-		})
+		}, config.TimeoutMinutes)
 	}
 
 	if err != nil {
@@ -112,7 +112,7 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	err = retryNotFound(func() error {
 		group, err = config.directory.Groups.Get(createdGroup.Id).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Taking too long to create this group: %s", err)
@@ -165,7 +165,7 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		updatedGroup, err = config.directory.Groups.Patch(d.Id(), group).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error updating group: %s", err)
@@ -176,7 +176,7 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		aliasesResponse, err = config.directory.Groups.Aliases.List(d.Id()).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Could not list group aliases: %s", err)
@@ -204,7 +204,7 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 			_, err = config.directory.Groups.Aliases.Insert(d.Id(), alias).Do()
 			return err
-		})
+		}, config.TimeoutMinutes)
 	}
 
 	if err != nil {
@@ -223,7 +223,7 @@ func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		group, err = config.directory.Groups.Get(d.Id()).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("Group %q", d.Get("name").(string)))
@@ -247,7 +247,7 @@ func resourceGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		err = config.directory.Groups.Delete(d.Id()).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error deleting group: %s", err)
 	}

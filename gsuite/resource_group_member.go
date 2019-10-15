@@ -90,7 +90,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	err = retryPassDuplicate(func() error {
 		createdGroupMember, err = config.directory.Members.Insert(group, groupMember).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		if !strings.Contains(err.Error(), "Member already exists") {
@@ -102,7 +102,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		err = retry(func() error {
 			existingGroupMembers, err = config.directory.Members.List(group).Do()
 			return err
-		})
+		}, config.TimeoutMinutes)
 		if err != nil {
 			return fmt.Errorf("[ERROR] Error listing existing group members: %s", err)
 		}
@@ -122,7 +122,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		err = retry(func() error {
 			_, err = config.directory.Members.Patch(group, locatedGroupMember.Id, groupMember).Do()
 			return err
-		})
+		}, config.TimeoutMinutes)
 
 		if err != nil {
 			return fmt.Errorf("[ERROR] Error updating existing group member: %s", err)
@@ -138,7 +138,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	err = retryNotFound(func() error {
 		groupMember, err = config.directory.Members.Get(group, d.Id()).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Taking too long to create this group member: %s", err)
@@ -172,7 +172,7 @@ func resourceGroupMemberUpdate(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		updatedGroupMember, err = config.directory.Members.Patch(strings.ToLower(d.Get("group").(string)), d.Id(), groupMember).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error updating group member: %s", err)
@@ -190,7 +190,7 @@ func resourceGroupMemberRead(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		groupMember, err = config.directory.Members.Get(strings.ToLower(d.Get("group").(string)), d.Id()).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("Group member %q", d.Get("email").(string)))
@@ -214,7 +214,7 @@ func resourceGroupMemberDelete(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		err = config.directory.Members.Delete(strings.ToLower(d.Get("group").(string)), d.Id()).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error deleting group member: %s", err)
 	}

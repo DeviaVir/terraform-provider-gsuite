@@ -67,7 +67,7 @@ func dataGroupRead(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		group, err = config.directory.Groups.Get(d.Get("email").(string)).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("Group %q", d.Get("name").(string)))

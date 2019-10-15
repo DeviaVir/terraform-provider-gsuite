@@ -237,7 +237,7 @@ func dataUserRead(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		user, err = config.directory.Users.Get(d.Get("primary_email").(string)).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Id()))

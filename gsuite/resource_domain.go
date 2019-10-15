@@ -58,7 +58,7 @@ func resourceDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		createdDomain, err = config.directory.Domains.Insert(customerId, domain).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error creating domain: %s", err)
@@ -91,7 +91,7 @@ func resourceDomainRead(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		domain, err = config.directory.Domains.Get(customerId, domainName).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("Domain %q", d.Get("domain_name").(string)))
@@ -120,7 +120,7 @@ func resourceDomainDelete(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		err = config.directory.Domains.Delete(customerId, domainName).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error deleting domain: %s", err)
