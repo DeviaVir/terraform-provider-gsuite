@@ -444,7 +444,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		createdUser, err = config.directory.Users.Insert(user).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("Error creating user: %s", err)
@@ -454,7 +454,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	err = retryNotFound(func() error {
 		user, err = config.directory.Users.Get(createdUser.Id).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Taking too long to create this user: %s", err)
@@ -540,7 +540,7 @@ func userPosixCreate(d *schema.ResourceData, userID string, meta interface{}) er
 			return errors.Wrap(e, e.Body)
 		}
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("Error updating user: %s", err)
@@ -789,7 +789,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.Wrap(e, e.Body)
 		}
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		log.Printf("[WARN] Please note, a persistent 503 backend error can mean you need to change your posix values to be unique.")
@@ -811,7 +811,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("Eventual consistency. Please try again")
 		}
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("User %q", d.Id()))
@@ -866,7 +866,7 @@ func resourceUserDelete(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		err = config.directory.Users.Delete(d.Id()).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 	if err != nil {
 		return fmt.Errorf("Error deleting user: %s", err)
 	}

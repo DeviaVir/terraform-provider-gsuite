@@ -35,6 +35,8 @@ type Config struct {
 
 	CustomerId string
 
+	TimeoutMinutes int
+
 	OauthScopes []string
 
 	directory *directory.Service

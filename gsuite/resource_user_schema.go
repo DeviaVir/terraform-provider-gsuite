@@ -141,7 +141,7 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		created, err = config.directory.Schemas.Insert(myCustomerID, userSchema).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error creating user schema: %s", err)
@@ -162,7 +162,7 @@ func resourceUserSchemaRead(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		read, err = config.directory.Schemas.Get(myCustomerID, d.Id()).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("Schema %q", d.Get("schema_name").(string)))
 	}
@@ -212,7 +212,7 @@ func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		updated, err = config.directory.Schemas.Update(myCustomerID, d.Id(), userSchema).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error updating user schema: %s", err)
@@ -226,7 +226,7 @@ func resourceUserSchemaDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 	return retry(func() error {
 		return config.directory.Schemas.Delete(myCustomerID, d.Id()).Do()
-	})
+	}, config.TimeoutMinutes)
 }
 
 func resourceUserSchemaImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
