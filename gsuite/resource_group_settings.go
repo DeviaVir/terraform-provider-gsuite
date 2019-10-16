@@ -438,7 +438,7 @@ func resourceGroupSettingsCreate(d *schema.ResourceData, meta interface{}) error
 	err = retry(func() error {
 		_, err = config.groupSettings.Groups.Update(d.Get("email").(string), groupSetting).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 	if err != nil {
 		return fmt.Errorf("[ERROR] Something went wrong while updating group settings: %s", err)
 	}
@@ -719,7 +719,7 @@ func resourceGroupSettingsUpdate(d *schema.ResourceData, meta interface{}) error
 	err = retry(func() error {
 		_, err = config.groupSettings.Groups.Update(d.Get("email").(string), groupSetting).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error updating group settings: %s", err)
@@ -736,7 +736,7 @@ func resourceGroupSettingsRead(d *schema.ResourceData, meta interface{}) error {
 	err = retry(func() error {
 		groupSetting, err = config.groupSettings.Groups.Get(d.Get("email").(string)).Do()
 		return err
-	})
+	}, config.TimeoutMinutes)
 
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("Group Settings for %q", d.Get("name").(string)))
