@@ -252,7 +252,7 @@ func dataGroupSettingsRead(d *schema.ResourceData, meta interface{}) error {
 
 	id, err := config.groupSettings.Groups.Get(d.Get("email").(string)).Do()
 	if err != nil {
-		return fmt.Errorf("[ERROR] Error fetching group settings. Make sure the group exists: %s ", err)
+		return fmt.Errorf("[ERROR] Error fetching group settings. Make sure the group '%s' exists: %s ", d.Get("email").(string), err)
 	}
 
 	d.SetId(d.Get("email").(string))
