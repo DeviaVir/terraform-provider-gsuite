@@ -440,7 +440,7 @@ func resourceGroupSettingsCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}, config.TimeoutMinutes)
 	if err != nil {
-		return fmt.Errorf("[ERROR] Something went wrong while updating group settings: %s", err)
+		return fmt.Errorf("[ERROR] Something went wrong while updating group settings for '%s': %s", d.Get("email").(string), err)
 	}
 
 	return resourceGroupSettingsRead(d, meta)
@@ -722,7 +722,7 @@ func resourceGroupSettingsUpdate(d *schema.ResourceData, meta interface{}) error
 	}, config.TimeoutMinutes)
 
 	if err != nil {
-		return fmt.Errorf("[ERROR] Error updating group settings: %s", err)
+		return fmt.Errorf("[ERROR] Error updating group settings for '%s': %s", d.Get("email").(string), err)
 	}
 
 	return resourceGroupSettingsRead(d, meta)
@@ -784,7 +784,7 @@ func resourceGroupSettingsImporter(d *schema.ResourceData, meta interface{}) ([]
 
 	id, err := config.groupSettings.Groups.Get(d.Id()).Do()
 	if err != nil {
-		return nil, fmt.Errorf("[ERROR] Error fetching group settings. Make sure the group exists: %s ", err)
+		return nil, fmt.Errorf("[ERROR] Error fetching group settings. Make sure the group '%s' exists: %s ", d.Id(), err)
 	}
 
 	d.SetId(d.Id())
