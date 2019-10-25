@@ -439,15 +439,46 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	user.Name = userName
 
-	var createdUser *directory.User
 	var err error
+	var existingUsers *directory.Users
+	err = retry(func() error {
+	    existingUsers, err = config.directory.Users.List().Customer(config.CustomerId).Query("email:" + user.PrimaryEmail).Do()
+		return err
+	}, config.TimeoutMinutes)
+
+	var locatedUser *directory.User
+	for _, existingUser := range existingUsers.Users {
+		if existingUser.PrimaryEmail == user.PrimaryEmail {
+			locatedUser = existingUser
+			break
+		}
+	}
+
+	if locatedUser != nil {
+		log.Printf("[INFO] found existing user %s", locatedUser.PrimaryEmail)
+	
+		err = retry(func() error {
+			_, err = config.directory.Users.Update(locatedUser.Id, user).Do()
+			return err
+		}, config.TimeoutMinutes)
+	
+		if err != nil {
+			return fmt.Errorf("[ERROR] Error updating existing user: %s", err)
+		}
+
+		log.Printf("[INFO] Updated user: %s", user.PrimaryEmail)
+		d.SetId(locatedUser.Id)
+		return resourceUserRead(d, meta)
+	}
+
+	var createdUser *directory.User
 	err = retry(func() error {
 		createdUser, err = config.directory.Users.Insert(user).Do()
 		return err
 	}, config.TimeoutMinutes)
 
 	if err != nil {
-		return fmt.Errorf("Error creating user: %s", err)
+		return fmt.Errorf("[ERROR] Error creating user: %s", err)
 	}
 
 	// Try to read the user, retrying for 404's

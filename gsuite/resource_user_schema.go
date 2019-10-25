@@ -4,16 +4,12 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	directory "google.golang.org/api/admin/directory/v1"
 )
-
-// myCustomerID is a stand-in for the `customerId` field that's a required
-// argument to several API requests. This save us from having to query an
-// external resource and/or require it as an argument on the provider itself.
-const myCustomerID = "my_customer"
 
 func resourceUserSchema() *schema.Resource {
 	return &schema.Resource{
@@ -139,16 +135,51 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 	var created *directory.Schema
 
 	err = retry(func() error {
-		created, err = config.directory.Schemas.Insert(myCustomerID, userSchema).Do()
+		created, err = config.directory.Schemas.Insert(config.CustomerId, userSchema).Do()
 		return err
 	}, config.TimeoutMinutes)
 
 	if err != nil {
-		return fmt.Errorf("[ERROR] Error creating user schema: %s", err)
-	}
+		if !strings.Contains(err.Error(), "Entity Already Exists") {
+			return fmt.Errorf("[ERROR] Error creating user schema: %s", err)
+		}
+		var existingSchemas *directory.Schemas
+		err = retry(func() error {
+			existingSchemas, err = config.directory.Schemas.List(config.CustomerId).Do()
+		 	return err
+		}, config.TimeoutMinutes)
 
-	d.SetId(created.SchemaId)
-	log.Printf("[INFO] Created user schema: %s", created.SchemaName)
+		if err != nil {
+			return fmt.Errorf("[ERROR] Error listing existing schemas: %s", err)
+		}
+		var locatedSchema *directory.Schema
+		for _, existingSchema := range existingSchemas.Schemas {
+			if existingSchema.SchemaName == userSchema.SchemaName {
+				locatedSchema = existingSchema
+				break
+			}
+		}
+
+		if locatedSchema == nil {
+			return fmt.Errorf("[ERROR] Error locating existing user schema %s", userSchema.SchemaName)
+		}
+		log.Printf("[INFO] found existing user schema %s", locatedSchema.SchemaName)
+	
+		var err error
+		err = retry(func() error {
+			_, err = config.directory.Schemas.Update(config.CustomerId, locatedSchema.SchemaId, userSchema).Do()
+			return err
+		}, config.TimeoutMinutes)
+
+		if err != nil {
+			return fmt.Errorf("[ERROR] Error updating existing user schema: %s", err)
+		}
+		log.Printf("[INFO] Updated user schema: %s", userSchema.SchemaName)
+		d.SetId(locatedSchema.SchemaId)
+	} else {
+		d.SetId(created.SchemaId)
+		log.Printf("[INFO] Created user schema: %s", created.SchemaName)
+	}
 	return resourceUserSchemaRead(d, meta)
 }
 
@@ -160,7 +191,7 @@ func resourceUserSchemaRead(d *schema.ResourceData, meta interface{}) error {
 		err  error
 	)
 	err = retry(func() error {
-		read, err = config.directory.Schemas.Get(myCustomerID, d.Id()).Do()
+		read, err = config.directory.Schemas.Get(config.CustomerId, d.Id()).Do()
 		return err
 	}, config.TimeoutMinutes)
 	if err != nil {
@@ -178,7 +209,7 @@ func resourceUserSchemaRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
-	userSchema, err := config.directory.Schemas.Get(myCustomerID, d.Id()).Do()
+	userSchema, err := config.directory.Schemas.Get(config.CustomerId, d.Id()).Do()
 	if err != nil {
 		return err
 	}
@@ -210,7 +241,7 @@ func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 	var updated *directory.Schema
 
 	err = retry(func() error {
-		updated, err = config.directory.Schemas.Update(myCustomerID, d.Id(), userSchema).Do()
+		updated, err = config.directory.Schemas.Update(config.CustomerId, d.Id(), userSchema).Do()
 		return err
 	}, config.TimeoutMinutes)
 
@@ -225,14 +256,14 @@ func resourceUserSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceUserSchemaDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 	return retry(func() error {
-		return config.directory.Schemas.Delete(myCustomerID, d.Id()).Do()
+		return config.directory.Schemas.Delete(config.CustomerId, d.Id()).Do()
 	}, config.TimeoutMinutes)
 }
 
 func resourceUserSchemaImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
 
-	imported, err := config.directory.Schemas.Get(myCustomerID, d.Id()).Do()
+	imported, err := config.directory.Schemas.Get(config.CustomerId, d.Id()).Do()
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Error fetching schema. Make sure the schema exists: %s ", err)
 	}
