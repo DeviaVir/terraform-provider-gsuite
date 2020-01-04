@@ -110,3 +110,20 @@ func convertStringSet(set *schema.Set) []string {
 	}
 	return s
 }
+
+func stringSliceDifference(left []string, right []string) []string {
+	var d []string
+	for _, l := range left {
+		f := false
+		for _, r := range right {
+			if r == l {
+				f = true
+				break
+			}
+		}
+		if !f {
+			d = append(d, l)
+		}
+	}
+	return d
+}

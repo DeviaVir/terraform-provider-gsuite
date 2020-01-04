@@ -76,8 +76,8 @@ func resourceUser() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"aliases": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Type:     schema.TypeSet,
+				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
@@ -334,7 +334,14 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	user := &directory.User{}
+	aliases := []string{}
 
+	if v, ok := d.GetOk("aliases"); ok {
+		for _, alias := range v.(*schema.Set).List() {
+			aliases = append(aliases, alias.(string))
+		}
+		log.Printf("[DEBUG] Setting %s: %v", "aliases", aliases)
+	}
 	if v, ok := d.GetOk("deletion_time"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "deletion_time", v.(string))
 		user.DeletionTime = v.(string)
@@ -442,7 +449,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	var err error
 	var existingUsers *directory.Users
 	err = retry(func() error {
-	    existingUsers, err = config.directory.Users.List().Customer(config.CustomerId).Query("email:" + user.PrimaryEmail).Do()
+		existingUsers, err = config.directory.Users.List().Customer(config.CustomerId).Query("email:" + user.PrimaryEmail).Do()
 		return err
 	}, config.TimeoutMinutes)
 
@@ -456,14 +463,20 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if locatedUser != nil {
 		log.Printf("[INFO] found existing user %s", locatedUser.PrimaryEmail)
-	
+
 		err = retry(func() error {
 			_, err = config.directory.Users.Update(locatedUser.Id, user).Do()
 			return err
 		}, config.TimeoutMinutes)
-	
+
 		if err != nil {
 			return fmt.Errorf("[ERROR] Error updating existing user: %s", err)
+		}
+
+		err = userAliasesUpdate(config, locatedUser, aliases)
+
+		if err != nil {
+			return err
 		}
 
 		log.Printf("[INFO] Updated user: %s", user.PrimaryEmail)
@@ -504,9 +517,44 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[ERROR] Not failing on this operation, your POSIX data has not been set. A next apply will retry.")
 	}
 
+	err = userAliasesUpdate(config, createdUser, aliases)
+
+	if err != nil {
+		return err
+	}
+
 	d.SetId(createdUser.Id)
 	log.Printf("[INFO] Created user: %s", createdUser.PrimaryEmail)
 	return resourceUserRead(d, meta)
+}
+
+func userAliasesUpdate(config *Config, user *directory.User, aliases []string) error {
+
+	createdAliases := stringSliceDifference(aliases, user.Aliases)
+	deletedAliases := stringSliceDifference(user.Aliases, aliases)
+
+	for _, alias := range createdAliases {
+		err := retry(func() error {
+			_, err := config.directory.Users.Aliases.Insert(user.Id, &directory.Alias{Alias: alias}).Do()
+			return err
+		}, config.TimeoutMinutes)
+
+		if err != nil {
+			return fmt.Errorf("[ERROR] Error adding alias to existing user: %s", err)
+		}
+	}
+
+	for _, alias := range deletedAliases {
+		err := retry(func() error {
+			return config.directory.Users.Aliases.Delete(user.Id, alias).Do()
+		}, config.TimeoutMinutes)
+
+		if err != nil {
+			return fmt.Errorf("[ERROR] Error deleting alias from  existing user: %s", err)
+		}
+	}
+
+	return nil
 }
 
 func userPosixCreate(d *schema.ResourceData, userID string, meta interface{}) error {
@@ -825,6 +873,21 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		log.Printf("[WARN] Please note, a persistent 503 backend error can mean you need to change your posix values to be unique.")
 		return fmt.Errorf("[ERROR] Error updating user: %s", err)
+	}
+
+	if d.HasChange("aliases") {
+
+		aliases := []string{}
+		if v, ok := d.GetOk("aliases"); ok {
+			for _, alias := range v.(*schema.Set).List() {
+				aliases = append(aliases, alias.(string))
+			}
+		}
+
+		err = userAliasesUpdate(config, updatedUser, aliases)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Printf("[INFO] Updated user: %s", updatedUser.PrimaryEmail)
