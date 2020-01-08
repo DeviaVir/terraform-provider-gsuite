@@ -1,4 +1,9 @@
 resource "gsuite_user" "developer" {
+
+  aliases = [
+    "chase@sillevis.net"
+  ]
+
   # advise to set this field to true on creation, then false afterwards
   change_password_next_login = true
 
