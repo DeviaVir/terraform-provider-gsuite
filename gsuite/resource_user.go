@@ -86,12 +86,6 @@ func resourceUser() *schema.Resource {
 				Computed: true,
 			},
 
-			"change_password_next_login": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
-
 			"creation_time": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -362,23 +356,11 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[DEBUG] Setting %s: %s", "org_unit_path", v.(string))
 		user.OrgUnitPath = v.(string)
 	}
-	if v, ok := d.GetOk("password"); ok {
-		log.Printf("[DEBUG] Setting %s: %s", "password", v.(string))
-		user.Password = v.(string)
-	}
-	if v, ok := d.GetOk("hash_function"); ok {
-		log.Printf("[DEBUG] Setting %s: %s", "hash_function", v.(string))
-		user.HashFunction = v.(string)
-	}
 	if v, ok := d.GetOk("suspension_reason"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "suspension_reason", v.(string))
 		user.SuspensionReason = v.(string)
 	}
 
-	if v, ok := d.GetOk("change_password_next_login"); ok {
-		log.Printf("[DEBUG] Setting %s: %t", "change_password_next_login", v.(bool))
-		user.ChangePasswordAtNextLogin = v.(bool)
-	}
 	if v, ok := d.GetOk("include_in_global_list"); ok {
 		log.Printf("[DEBUG] Setting %s: %t", "include_in_global_list", v.(bool))
 		user.IncludeInGlobalAddressList = v.(bool)
@@ -483,6 +465,19 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		d.SetId(locatedUser.Id)
 		return resourceUserRead(d, meta)
 	}
+
+	// Transimt password related state on account creation only.
+	if v, ok := d.GetOk("password"); ok {
+		log.Printf("[DEBUG] Setting %s: %s", "password", v.(string))
+		user.Password = v.(string)
+	}
+
+	if v, ok := d.GetOk("hash_function"); ok {
+		log.Printf("[DEBUG] Setting %s: %s", "hash_function", v.(string))
+		user.HashFunction = v.(string)
+	}
+
+	user.ChangePasswordAtNextLogin = true
 
 	var createdUser *directory.User
 	err = retry(func() error {
@@ -632,7 +627,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	user := &directory.User{}
-	nullFields := []string{}
+	nullFields := []string{"change_password_next_login", "hash_function", "password"}
 
 	if d.HasChange("deletion_time") {
 		if v, ok := d.GetOk("deletion_time"); ok {
@@ -688,21 +683,6 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	// We do not control the password in terraform, so drop from update
-	log.Printf("[DEBUG] Removing user password")
-	user.Password = ""
-	nullFields = append(nullFields, "password")
-
-	if d.HasChange("hash_function") {
-		if v, ok := d.GetOk("hash_function"); ok {
-			log.Printf("[DEBUG] Updating user hash_function: %s", d.Get("hash_function").(string))
-			user.HashFunction = v.(string)
-		} else {
-			log.Printf("[DEBUG] Removing user hash_function")
-			user.HashFunction = ""
-			nullFields = append(nullFields, "hash_function")
-		}
-	}
 	if d.HasChange("suspension_reason") {
 		if v, ok := d.GetOk("suspension_reason"); ok {
 			log.Printf("[DEBUG] Updating user suspension_reason: %s", d.Get("suspension_reason").(string))
@@ -714,16 +694,6 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	if d.HasChange("change_password_next_login") {
-		if v, ok := d.GetOk("change_password_next_login"); ok {
-			log.Printf("[DEBUG] Updating user change_password_next_login: %t", d.Get("change_password_next_login").(bool))
-			user.ChangePasswordAtNextLogin = v.(bool)
-		} else {
-			log.Printf("[DEBUG] Removing user change_password_next_login")
-			user.ChangePasswordAtNextLogin = false
-			nullFields = append(nullFields, "change_password_next_login")
-		}
-	}
 	if d.HasChange("include_in_global_list") {
 		if v, ok := d.GetOk("include_in_global_list"); ok {
 			log.Printf("[DEBUG] Updating user include_in_global_list: %t", d.Get("include_in_global_list").(bool))
@@ -917,10 +887,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("recovery_email", user.RecoveryEmail)
 	d.Set("recovery_phone", user.RecoveryPhone)
 	d.Set("org_unit_path", user.OrgUnitPath)
-	d.Set("password", user.Password)
-	d.Set("hash_function", user.HashFunction)
 	d.Set("suspension_reason", user.SuspensionReason)
-	d.Set("change_password_next_login", user.ChangePasswordAtNextLogin)
 	d.Set("include_in_global_list", user.IncludeInGlobalAddressList)
 	d.Set("is_ip_whitelisted", user.IpWhitelisted)
 	d.Set("is_admin", user.IsAdmin)
@@ -935,7 +902,6 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("etag", user.Etag)
 	d.Set("last_login_time", user.LastLoginTime)
 	d.Set("is_mailbox_setup", user.IsMailboxSetup)
-
 	d.Set("name", flattenUserName(user.Name))
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
@@ -985,10 +951,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("recovery_email", id.RecoveryEmail)
 	d.Set("recovery_phone", id.RecoveryPhone)
 	d.Set("org_unit_path", id.OrgUnitPath)
-	d.Set("password", id.Password)
-	d.Set("hash_function", id.HashFunction)
 	d.Set("suspension_reason", id.SuspensionReason)
-	d.Set("change_password_next_login", id.ChangePasswordAtNextLogin)
 	d.Set("include_in_global_list", id.IncludeInGlobalAddressList)
 	d.Set("is_ip_whitelisted", id.IpWhitelisted)
 	d.Set("is_admin", id.IsAdmin)
