@@ -85,63 +85,33 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		Email: strings.ToLower(d.Get("email").(string)),
 	}
 
-	var createdGroupMember *directory.Member
 	var err error
-	err = retryPassDuplicate(func() error {
-		createdGroupMember, err = config.directory.Members.Insert(group, groupMember).Do()
-		return err
-	}, config.TimeoutMinutes)
 
+	// check if the member already exists
+	memberExists, err := config.directory.Members.HasMember(group, d.Id()).Do()
 	if err != nil {
-		if !strings.Contains(err.Error(), "Member already exists") {
-			return fmt.Errorf("error creating group member: %s", err)
-		}
-		log.Printf("[INFO] %s already part of this group. attempting to update", groupMember.Email)
+		return fmt.Errorf("[ERROR] Error checking if group %s has member %s: %s", group, groupMember.Email, err)
+	}
 
-		var existingGroupMembers *directory.Members
-		err = retry(func() error {
-			existingGroupMembers, err = config.directory.Members.List(group).Do()
+	if !memberExists.IsMember {
+		var createdGroupMember *directory.Member
+		err = retryPassDuplicate(func() error {
+			createdGroupMember, err = config.directory.Members.Insert(group, groupMember).Do()
 			return err
 		}, config.TimeoutMinutes)
 		if err != nil {
-			return fmt.Errorf("[ERROR] Error listing existing group members: %s", err)
+			return fmt.Errorf("[ERROR] Taking too long to create this group member: %s", err)
 		}
-		var locatedGroupMember *directory.Member
-		for _, existingGroupMember := range existingGroupMembers.Members {
-			if existingGroupMember.Email == groupMember.Email {
-				locatedGroupMember = existingGroupMember
-				break
-			}
-		}
-		if locatedGroupMember == nil {
-			return fmt.Errorf("[ERROR] Error locating existing group member %s", groupMember.Email)
-		}
-		log.Printf("[INFO] found existing group member %s", locatedGroupMember.Email)
-
-		var err error
+		d.SetId(createdGroupMember.Id)
+	} else {
+		// patch existing
 		err = retry(func() error {
-			_, err = config.directory.Members.Patch(group, locatedGroupMember.Id, groupMember).Do()
+			_, err = config.directory.Members.Patch(group, d.Id(), groupMember).Do()
 			return err
 		}, config.TimeoutMinutes)
-
 		if err != nil {
 			return fmt.Errorf("[ERROR] Error updating existing group member: %s", err)
 		}
-		log.Printf("[INFO] Updated group member: %s", groupMember.Email)
-		d.SetId(locatedGroupMember.Id)
-	} else {
-		log.Printf("[INFO] Created group member: %s", createdGroupMember.Email)
-		d.SetId(createdGroupMember.Id)
-	}
-
-	// Try to read the group member, retrying for 404's
-	err = retryNotFound(func() error {
-		groupMember, err = config.directory.Members.Get(group, d.Id()).Do()
-		return err
-	}, config.TimeoutMinutes)
-
-	if err != nil {
-		return fmt.Errorf("[ERROR] Taking too long to create this group member: %s", err)
 	}
 
 	return resourceGroupMemberRead(d, meta)
