@@ -39,6 +39,8 @@ type Config struct {
 
 	OauthScopes []string
 
+	UpdateExisting bool
+
 	directory *directory.Service
 
 	groupSettings *groupSettings.Service

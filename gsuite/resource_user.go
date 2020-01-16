@@ -320,6 +320,10 @@ func resourceUser() *schema.Resource {
 					},
 				},
 			},
+			"update_existing": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -429,41 +433,50 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	user.Name = userName
 
 	var err error
-	var existingUsers *directory.Users
-	err = retry(func() error {
-		existingUsers, err = config.directory.Users.List().Customer(config.CustomerId).Query("email:" + user.PrimaryEmail).Do()
-		return err
-	}, config.TimeoutMinutes)
 
-	var locatedUser *directory.User
-	for _, existingUser := range existingUsers.Users {
-		if existingUser.PrimaryEmail == user.PrimaryEmail {
-			locatedUser = existingUser
-			break
-		}
+	updateExisting := config.UpdateExisting
+	if v, ok := d.GetOk("update_existing"); ok {
+		updateExisting = v.(bool)
 	}
 
-	if locatedUser != nil {
-		log.Printf("[INFO] found existing user %s", locatedUser.PrimaryEmail)
+	if updateExisting {
 
+		var existingUsers *directory.Users
 		err = retry(func() error {
-			_, err = config.directory.Users.Update(locatedUser.Id, user).Do()
+			existingUsers, err = config.directory.Users.List().Customer(config.CustomerId).Query("email:" + user.PrimaryEmail).Do()
 			return err
 		}, config.TimeoutMinutes)
 
-		if err != nil {
-			return fmt.Errorf("[ERROR] Error updating existing user: %s", err)
+		var locatedUser *directory.User
+		for _, existingUser := range existingUsers.Users {
+			if existingUser.PrimaryEmail == user.PrimaryEmail {
+				locatedUser = existingUser
+				break
+			}
 		}
 
-		err = userAliasesUpdate(config, locatedUser, aliases)
+		if locatedUser != nil {
+			log.Printf("[INFO] found existing user %s", locatedUser.PrimaryEmail)
 
-		if err != nil {
-			return err
+			err = retry(func() error {
+				_, err = config.directory.Users.Update(locatedUser.Id, user).Do()
+				return err
+			}, config.TimeoutMinutes)
+
+			if err != nil {
+				return fmt.Errorf("[ERROR] Error updating existing user: %s", err)
+			}
+
+			err = userAliasesUpdate(config, locatedUser, aliases)
+
+			if err != nil {
+				return err
+			}
+
+			log.Printf("[INFO] Updated user: %s", user.PrimaryEmail)
+			d.SetId(locatedUser.Id)
+			return resourceUserRead(d, meta)
 		}
-
-		log.Printf("[INFO] Updated user: %s", user.PrimaryEmail)
-		d.SetId(locatedUser.Id)
-		return resourceUserRead(d, meta)
 	}
 
 	// Transimt password related state on account creation only.

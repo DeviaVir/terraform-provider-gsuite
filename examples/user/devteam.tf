@@ -53,4 +53,7 @@ resource "gsuite_user" "developer" {
     type  = "organization"
     value = "1234"
   }
+
+  # If omitted or `true` existing GSuite users defined as Terraform resources will be imported by `terraform apply`.
+  update_existing = true
 }
