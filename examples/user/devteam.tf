@@ -4,17 +4,24 @@ resource "gsuite_user" "developer" {
     "chase@sillevis.net"
   ]
 
-  # advise to set this field to true on creation, then false afterwards
-  change_password_next_login = true
-
   name {
     family_name = "Sillevis"
     given_name  = "Chase"
   }
 
-  # on creation this field is required, later during updates it is ignored;
-  # it is expected that the user and Google will handle passwords from there on
-  # out
+  # Note the following behaviors regarding passwords:
+  #
+  #   - When running `terraform import` on a user resource:
+  #     - The `password` and `hash_function` fields are ignored.
+  #   - When running `terraform apply` with a new user resource in your terraform state:
+  #     - If the user does not exist in GSuite the following applies:
+  #       - The `password` field must be set or GSuite will reject the request.
+  #       - The `hash_function` field must be set only if the `password` field contains a hashed value.
+  #       - The GSuite account will be configured to require password change on next login.
+  #     - If the user exists in GSuite the following applies:
+  #       - The `password` and `hash_function` fields will be ignored.
+  #   - When running `terraform apply` with an existing user resource:
+  #     - The `password` and `hash_function` fields will be ignored.
   password = "testtest123!"
 
   primary_email = "developer@sillevis.net"
