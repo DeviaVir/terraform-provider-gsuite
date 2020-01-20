@@ -43,6 +43,10 @@ func Provider() *schema.Provider {
 				Optional: true,
 				Default:  1, // 1 + (n*2) roof 16 = 1+2+4+8+16 = 31 seconds, 1 min should be "normal" operations
 			},
+			"update_existing": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"gsuite_group":           dataGroup(),
@@ -111,12 +115,19 @@ func providerConfigure(d *schema.ResourceData, terraformVersion string) (interfa
 	timeoutMinutes := d.Get("timeout_minutes").(int)
 
 	oauthScopes := oauthScopesFromConfigOrDefault(d.Get("oauth_scopes").(*schema.Set))
+
+	updateExisting := true
+	if v, ok := d.GetOk("update_existing"); ok {
+		updateExisting = v.(bool)
+	}
+
 	config := Config{
 		Credentials:           credentials,
 		ImpersonatedUserEmail: impersonatedUserEmail,
 		OauthScopes:           oauthScopes,
 		CustomerId:            customerID,
 		TimeoutMinutes:        timeoutMinutes,
+		UpdateExisting:        updateExisting,
 	}
 
 	if err := config.loadAndValidate(terraformVersion); err != nil {
