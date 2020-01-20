@@ -88,7 +88,7 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 	var err error
 
 	// check if the member already exists
-	memberExists, err := config.directory.Members.HasMember(group, d.Id()).Do()
+	memberExists, err := config.directory.Members.HasMember(group, d.Get("email").(string)).Do()
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error checking if group %s has member %s: %s", group, groupMember.Email, err)
 	}
