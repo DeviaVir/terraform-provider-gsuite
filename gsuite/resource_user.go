@@ -448,7 +448,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		}, config.TimeoutMinutes)
 
 		var locatedUser *directory.User
-		if existingUsers.Users != nil {
+		if existingUsers != nil {
 			for _, existingUser := range existingUsers.Users {
 				if existingUser.PrimaryEmail == user.PrimaryEmail {
 					locatedUser = existingUser
