@@ -209,6 +209,16 @@ func dataUser() *schema.Resource {
 				Computed: true,
 			},
 
+			"recovery_email": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"recovery_phone": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
 			"custom_schema": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -265,7 +275,8 @@ func dataUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("etag", user.Etag)
 	d.Set("last_login_time", user.LastLoginTime)
 	d.Set("is_mailbox_setup", user.IsMailboxSetup)
-
+	d.Set("recovery_email", user.RecoveryEmail)
+	d.Set("recovery_phone", user.RecoveryPhone)
 	d.Set("name", flattenUserName(user.Name))
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
