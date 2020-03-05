@@ -3,11 +3,55 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	directory "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/googleapi"
 )
+
+// isDuplicateError returns true when the error is googleapi 409 "Entity already exists".
+func isDuplicateError(err error) bool {
+	gerr, ok := err.(*googleapi.Error)
+	if !ok {
+		return false
+	}
+	return gerr.Code == 409
+}
+
+// groupMatchesActual checks if a Group made for creation matches a currently existing (actual) group.
+// If the returned error is non-nil, there is a nonrecoverable problem. Otherwise, true is
+// returned when the groups match.  A group matches an actual group when the names, emails
+// and aliases are the same. In this or similar cases there is no error and true is
+// returned. If the names are different, it is not a match, with no error. If the two
+// groups are incompatible, for example the names match but the emails are different, then
+// a human-readable error is returned. The description is ignored.
+func groupMatchesActual(group, actual *directory.Group) (bool, error) {
+	if group.Name != actual.Name {
+		return false, nil
+	}
+	if group.Email != actual.Email {
+		return false, fmt.Errorf("Emails for group %s do not match: %s vs %s", group.Name, group.Email, actual.Email)
+	}
+	if len(group.Aliases) != len(actual.Aliases) {
+		return false, fmt.Errorf("Aliases don't match for group %s: %d in group vs %d in actual", group.Name, len(group.Aliases), len(actual.Aliases))
+	}
+	if len(group.Aliases) > 0 {
+		groupAliases := make([]string, len(group.Aliases))
+		copy(groupAliases, group.Aliases)
+		sort.Strings(groupAliases)
+		actualAliases := make([]string, len(actual.Aliases))
+		copy(actualAliases, actual.Aliases)
+		sort.Strings(actualAliases)
+		for i := 0; i < len(groupAliases); i++ {
+			if groupAliases[i] != actualAliases[i] {
+				return false, fmt.Errorf("Aliase mismatch for group %s: %s vs %s", groupAliases[i], actualAliases[i])
+			}
+		}
+	}
+	return true, nil
+}
 
 func resourceGroup() *schema.Resource {
 	return &schema.Resource{
@@ -59,6 +103,12 @@ func resourceGroup() *schema.Resource {
 				Computed: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+
+			"ignore_duplicates": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,  // Will default to false.
+			},
 		},
 	}
 }
@@ -80,32 +130,72 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 		group.Description = v.(string)
 	}
 
+	ignoreDuplicates := false
+	if v, ok := d.GetOk("ignore_duplicates"); ok {
+		log.Printf("[DEBUG] Setting ignore duplicates: %t", v.(bool))
+		ignoreDuplicates = v.(bool)
+	}
+
 	var createdGroup *directory.Group
 	var err error
-	err = retry(func() error {
+	err = retryPassDuplicate(func() error {
 		createdGroup, err = config.directory.Groups.Insert(group).Do()
 		return err
 	}, config.TimeoutMinutes)
 
-	if err != nil {
+	isDuplicate := false
+	if ignoreDuplicates && isDuplicateError(err) {
+		domainSep := strings.LastIndex(group.Email, "@")
+		if domainSep == -1 {
+			return fmt.Errorf("[ERROR] Could not find domain in %s", group.Email)
+		}
+		domain := group.Email[domainSep + 1:]
+		log.Printf("[DEBUG] listing groups to match duplicate for %s in %s", group.Name, domain)
+		var groupsList *directory.Groups
+		err = retry(func() error {
+			groupsList, err = config.directory.Groups.List().Domain(domain).Query(fmt.Sprintf("name=%s", group.Name)).Do()
+			return err
+		}, config.TimeoutMinutes)
+		if err != nil {
+			return fmt.Errorf("[ERROR] Error listing groups to match for duplicate group %s: %s", group.Name, err.Error())
+		}
+		createdGroup = nil
+		log.Printf("[DEBUG] found %d groups to match to %s", len(groupsList.Groups), group.Name)
+		for _, foundGroup := range groupsList.Groups {
+			var match bool
+			if match, err = groupMatchesActual(group, foundGroup); err != nil {
+				return fmt.Errorf("[ERROR] Unresolvable duplicate group mismatch: %s", err)
+			} else if match {
+				createdGroup = foundGroup
+				break
+			}
+		}
+		if createdGroup == nil {
+			return fmt.Errorf("[ERROR] No match found for duplicate group %s", group.Name)
+		}
+		log.Printf("[DEBUG] found matching duplicate for %s", group.Name)
+		isDuplicate = true
+	} else if err != nil {
 		return fmt.Errorf("[ERROR] Error creating group: %s", err)
 	}
 
-	// Handle group aliases
-	aliasesCount := d.Get("aliases.#").(int)
-	for i := 0; i < aliasesCount; i++ {
-		cfgAlias := d.Get(fmt.Sprintf("aliases.%d", i)).(string)
-		err = retry(func() error {
-			alias := &directory.Alias{
-				Alias: cfgAlias,
-			}
-			_, err = config.directory.Groups.Aliases.Insert(d.Id(), alias).Do()
-			return err
-		}, config.TimeoutMinutes)
-	}
+	if !isDuplicate {
+		// Handle group aliases
+		aliasesCount := d.Get("aliases.#").(int)
+		for i := 0; i < aliasesCount; i++ {
+			cfgAlias := d.Get(fmt.Sprintf("aliases.%d", i)).(string)
+			err = retry(func() error {
+				alias := &directory.Alias{
+					Alias: cfgAlias,
+				}
+				_, err = config.directory.Groups.Aliases.Insert(d.Id(), alias).Do()
+				return err
+			}, config.TimeoutMinutes)
+		}
 
-	if err != nil {
-		return fmt.Errorf("[ERROR] Error creating group aliases: %s", err)
+		if err != nil {
+			return fmt.Errorf("[ERROR] Error creating group aliases: %s", err)
+		}
 	}
 
 	// Try to read the group, retrying for 404's
