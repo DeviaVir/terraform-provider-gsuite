@@ -39,8 +39,9 @@ func resourceGroupSettings() *schema.Resource {
 				Computed: true,
 			},
 			"email": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validateEmail,
 			},
 			"allow_external_members": {
 				Type:     schema.TypeString,

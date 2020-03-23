@@ -64,22 +64,6 @@ func resourceGroup() *schema.Resource {
 	}
 }
 
-func validateEmail(v interface{}, k string) (warnings []string, errors []error) {
-	if v == nil || v.(string) == "" {
-		return
-	}
-	email := v.(string)
-	// TODO: This does not account for non-standard but still RFC compliant
-	// email addresses such as "some@email"@domain.com
-	local := strings.Split(email, "@")[0]
-	if len(local) > 63 {
-		errors = append(errors,
-			fmt.Errorf("local portion of email %s exceeds 63 characters", email))
-	}
-
-	return
-}
-
 func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
