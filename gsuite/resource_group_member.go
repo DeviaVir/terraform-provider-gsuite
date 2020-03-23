@@ -46,6 +46,7 @@ var schemaMember = map[string]*schema.Schema{
 		DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 			return strings.ToLower(strings.Trim(old, `"`)) == strings.ToLower(strings.Trim(new, `"`))
 		},
+		ValidateFunc: validateEmail,
 	},
 }
 

@@ -26,6 +26,7 @@ func resourceGroup() *schema.Resource {
 				StateFunc: func(val interface{}) string {
 					return strings.ToLower(val.(string))
 				},
+				ValidateFunc: validateEmail,
 			},
 
 			"aliases": {

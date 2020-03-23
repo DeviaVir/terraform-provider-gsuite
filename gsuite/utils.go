@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/mail"
 	"strings"
 	"time"
 
@@ -126,4 +127,31 @@ func stringSliceDifference(left []string, right []string) []string {
 		}
 	}
 	return d
+}
+
+func validateEmail(v interface{}, k string) (warnings []string, errors []error) {
+	if v == nil || v.(string) == "" {
+		return
+	}
+	email := v.(string)
+
+	e, err := mail.ParseAddress(email)
+	if err != nil {
+		errors = append(errors,
+			fmt.Errorf("unable to parse email address %s", email))
+	}
+
+	if e.Name != "" {
+		errors = append(errors,
+			fmt.Errorf("unexpected email format for %s expected an email format of myemail@domain.com", email))
+	}
+
+	parts := strings.Split(e.Address, "@")
+	local := strings.Join(parts[0:len(parts)-1], "@")
+	if len(local) > 63 {
+		errors = append(errors,
+			fmt.Errorf("local portion of email %s exceeds 63 characters", email))
+	}
+
+	return
 }
