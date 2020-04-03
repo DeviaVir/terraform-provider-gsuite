@@ -73,6 +73,7 @@ func dataUserAttributes() *schema.Resource {
 }
 
 type entry struct {
+	Type  string      `json:"type"`
 	Value interface{} `json:"value"`
 }
 
@@ -83,7 +84,7 @@ type entry struct {
 // strings. Placing quotes around *all* types of values provides the most
 // consistent behavior overall.
 func (e *entry) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`{"value":"%v"}`, e.Value)), nil
+	return []byte(fmt.Sprintf(`{"type": "%s", "value":"%v"}`, e.Type, e.Value)), nil
 }
 
 func dataUserAttributesRead(d *schema.ResourceData, _ interface{}) error {
@@ -96,7 +97,7 @@ func dataUserAttributesRead(d *schema.ResourceData, _ interface{}) error {
 					stmt := statement.(map[string]interface{})
 					var values []*entry
 					for _, value := range stmt["value"].([]interface{}) {
-						values = append(values, &entry{Value: value})
+						values = append(values, &entry{Type: "work", Value: value})
 					}
 					customAttributes[stmt["name"].(string)] = values
 				}
