@@ -112,7 +112,6 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 		log.Printf("[INFO] found existing group member %s", locatedGroupMember.Email)
 
-		var err error
 		err = retry(func() error {
 			_, err = config.directory.Members.Patch(group, locatedGroupMember.Id, groupMember).Do()
 			return err
