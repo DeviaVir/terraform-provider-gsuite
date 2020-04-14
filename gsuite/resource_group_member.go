@@ -99,16 +99,9 @@ func resourceGroupMemberCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 		log.Printf("[INFO] %s already part of this group. attempting to update", groupMember.Email)
 
-		var existingGroupMembers *directory.Members
-		err = retry(func() error {
-			existingGroupMembers, err = config.directory.Members.List(group).Do()
-			return err
-		}, config.TimeoutMinutes)
-		if err != nil {
-			return fmt.Errorf("[ERROR] Error listing existing group members: %s", err)
-		}
+		members, err := getAPIMembers(group, config)
 		var locatedGroupMember *directory.Member
-		for _, existingGroupMember := range existingGroupMembers.Members {
+		for _, existingGroupMember := range members {
 			if existingGroupMember.Email == groupMember.Email {
 				locatedGroupMember = existingGroupMember
 				break
