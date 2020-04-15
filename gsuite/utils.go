@@ -85,6 +85,10 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 			log.Printf("[DEBUG] Retrying due to eventual consistency")
 			return resource.RetryableError(err)
 		}
+		if strings.Contains(fmt.Sprintf("%s", err), "Invalid Value, invalid") {
+			log.Printf("[DEBUG] G Suite API could be tripping up, retrying")
+			return resource.RetryableError(err)
+		}
 
 		return resource.NonRetryableError(err)
 	})
