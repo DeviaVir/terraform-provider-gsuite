@@ -734,7 +734,7 @@ func resourceGroupSettingsRead(d *schema.ResourceData, meta interface{}) error {
 
 	var err error
 	var groupSetting *groupSettings.Groups
-	err = retry(func() error {
+	err = retryInvalid(func() error {
 		groupSetting, err = config.groupSettings.Groups.Get(d.Get("email").(string)).Do()
 		return err
 	}, config.TimeoutMinutes)

@@ -28,35 +28,48 @@ func handleNotFoundError(err error, d *schema.ResourceData, resource string) err
 }
 
 func retry(retryFunc func() error, minutes int) error {
-	return retryTime(retryFunc, minutes, false, false)
+	return retryTime(retryFunc, minutes, false, false, false)
 }
 
 func retryNotFound(retryFunc func() error, minutes int) error {
-	return retryTime(retryFunc, minutes, true, false)
+	return retryTime(retryFunc, minutes, true, false, false)
+}
+
+func retryInvalid(retryFunc func() error, minutes int) error {
+	return retryTime(retryFunc, minutes, false, false, true)
 }
 
 func retryPassDuplicate(retryFunc func() error, minutes int) error {
-	return retryTime(retryFunc, minutes, true, true)
+	return retryTime(retryFunc, minutes, true, true, false)
 }
 
-func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPassDuplicate bool) error {
+func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPassDuplicate bool, retryInvalid bool) error {
 	wait := 1
 	return resource.Retry(time.Duration(minutes)*time.Minute, func() *resource.RetryError {
 		err := retryFunc()
 		if err == nil {
 			return nil
 		}
+
 		rand.Seed(time.Now().UnixNano())
 		randomNumberMiliseconds := rand.Intn(1001)
+
+		if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+			log.Printf("[DEBUG] Retrying server error code...")
+			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+			wait = wait * 2
+			return resource.RetryableError(gerr)
+		}
+
 		if retryPassDuplicate {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 429) {
 				log.Printf("[DEBUG] Retrying quota/server error code...")
 				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
 				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
 		} else {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 409 || gerr.Code == 429 || gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 409 || gerr.Code == 429) {
 				log.Printf("[DEBUG] Retrying quota/server error code...")
 				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
 				wait = wait * 2
@@ -66,6 +79,15 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 		if retryNotFound {
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 404) {
 				log.Printf("[DEBUG] Retrying for eventual consistency...")
+				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+				wait = wait * 2
+				return resource.RetryableError(gerr)
+			}
+		}
+
+		if retryInvalid {
+			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "invalid" || gerr.Code == 400) {
+				log.Printf("[DEBUG] Retrying invalid error code...")
 				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
 				wait = wait * 2
 				return resource.RetryableError(gerr)
@@ -83,10 +105,6 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 		}
 		if strings.Contains(fmt.Sprintf("%s", err), "Eventual consistency. Please try again") {
 			log.Printf("[DEBUG] Retrying due to eventual consistency")
-			return resource.RetryableError(err)
-		}
-		if strings.Contains(fmt.Sprintf("%s", err), "Invalid Value, invalid") {
-			log.Printf("[DEBUG] G Suite API could be tripping up, retrying")
 			return resource.RetryableError(err)
 		}
 
