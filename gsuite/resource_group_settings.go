@@ -740,7 +740,7 @@ func resourceGroupSettingsRead(d *schema.ResourceData, meta interface{}) error {
 	}, config.TimeoutMinutes)
 
 	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("Group Settings for %q", d.Get("name").(string)))
+		return handleNotFoundError(err, d, fmt.Sprintf("Group Settings for %q", d.Get("email").(string)))
 	}
 
 	d.SetId(d.Get("email").(string))
