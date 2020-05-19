@@ -11,14 +11,14 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
-func resourceUserFields() *schema.Resource {
+func resourceUserAttributes() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceUserFieldsCreate,
-		Read:   resourceUserFieldsRead,
-		Update: resourceUserFieldsUpdate,
-		Delete: resourceUserFieldsDelete,
+		Create: resourceUserAttributesCreate,
+		Read:   resourceUserAttributesRead,
+		Update: resourceUserAttributesUpdate,
+		Delete: resourceUserAttributesDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceUserFieldsImporter,
+			State: resourceUserAttributesImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -50,7 +50,7 @@ func resourceUserFields() *schema.Resource {
 	}
 }
 
-func resourceUserFieldsCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceUserAttributesCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	user := &directory.User{}
@@ -82,10 +82,10 @@ func resourceUserFieldsCreate(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(updatedUser.Id)
 	log.Printf("[INFO] Created user fields: %s", updatedUser.PrimaryEmail)
-	return resourceUserFieldsRead(d, meta)
+	return resourceUserAttributesRead(d, meta)
 }
 
-func resourceUserFieldsUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceUserAttributesUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	user := &directory.User{}
@@ -122,10 +122,10 @@ func resourceUserFieldsUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Printf("[INFO] Updated user fields: %s", updatedUser.PrimaryEmail)
-	return resourceUserFieldsRead(d, meta)
+	return resourceUserAttributesRead(d, meta)
 }
 
-func resourceUserFieldsRead(d *schema.ResourceData, meta interface{}) error {
+func resourceUserAttributesRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	var user *directory.User
@@ -157,7 +157,7 @@ func resourceUserFieldsRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceUserFieldsDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceUserAttributesDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
 	user := &directory.User{}
@@ -177,7 +177,7 @@ func resourceUserFieldsDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 // Allow importing using any key (id, email, alias)
-func resourceUserFieldsImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceUserAttributesImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
 
 	id, err := config.directory.Users.Get(d.Id()).Projection("full").Do()
