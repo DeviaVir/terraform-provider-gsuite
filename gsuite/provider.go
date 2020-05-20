@@ -55,13 +55,14 @@ func Provider() *schema.Provider {
 			"gsuite_user_attributes": dataUserAttributes(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"gsuite_domain":         resourceDomain(),
-			"gsuite_group":          resourceGroup(),
-			"gsuite_group_member":   resourceGroupMember(),
-			"gsuite_group_members":  resourceGroupMembers(),
-			"gsuite_group_settings": resourceGroupSettings(),
-			"gsuite_user":           resourceUser(),
-			"gsuite_user_schema":    resourceUserSchema(),
+			"gsuite_domain":          resourceDomain(),
+			"gsuite_group":           resourceGroup(),
+			"gsuite_group_member":    resourceGroupMember(),
+			"gsuite_group_members":   resourceGroupMembers(),
+			"gsuite_group_settings":  resourceGroupSettings(),
+			"gsuite_user":            resourceUser(),
+			"gsuite_user_attributes": resourceUserAttributes(),
+			"gsuite_user_schema":     resourceUserSchema(),
 		},
 	}
 
