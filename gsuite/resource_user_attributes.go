@@ -1,6 +1,7 @@
 package gsuite
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -64,6 +65,8 @@ func resourceUserAttributesCreate(d *schema.ResourceData, meta interface{}) erro
 	for i := 0; i < d.Get("custom_schema.#").(int); i++ {
 		entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
 		customSchemas[entry["name"].(string)] = []byte(entry["value"].(string))
+
+		log.Printf("[DEBUG] setting entry %v", entry)
 	}
 	if len(customSchemas) > 0 {
 		user.CustomSchemas = customSchemas
@@ -86,42 +89,19 @@ func resourceUserAttributesCreate(d *schema.ResourceData, meta interface{}) erro
 }
 
 func resourceUserAttributesUpdate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(*Config)
-
-	user := &directory.User{}
-
-	if d.HasChange("primary_email") {
-		if v, ok := d.GetOk("primary_email"); ok {
-			log.Printf("[DEBUG] Updating user primary_email: %s", d.Get("primary_email").(string))
-			user.PrimaryEmail = v.(string)
-		}
-	}
-
-	if d.HasChange("custom_schema") {
-		customSchemas := map[string]googleapi.RawMessage{}
-		for i := 0; i < d.Get("custom_schema.#").(int); i++ {
-			entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
-			customSchemas[entry["name"].(string)] = []byte(entry["value"].(string))
-		}
-		user.CustomSchemas = customSchemas
-	}
-
-	var updatedUser *directory.User
-	var err error
-	err = retry(func() error {
-		updatedUser, err = config.directory.Users.Update(d.Id(), user).Do()
-		if e, ok := err.(*googleapi.Error); ok {
-			return errors.Wrap(e, e.Body)
-		}
-		return err
-	}, config.TimeoutMinutes)
-
+	/*
+		Defined in terms of delete + create, because resourceUserAttributesDelete will delete the information from a user by its stored id - even if we're actually changing the primary_email the gsuite_user_attributes resource points to - and resourceUserAttributesCreate will create the attributes for the current primary_email
+	*/
+	err := resourceUserAttributesDelete(d, meta)
 	if err != nil {
-		log.Printf("[WARN] Please note, a persistent 503 backend error can mean you need to change your posix values to be unique.")
-		return fmt.Errorf("[ERROR] Error updating user fields: %s", err)
+		return err
 	}
 
-	log.Printf("[INFO] Updated user fields: %s", updatedUser.PrimaryEmail)
+	err = resourceUserAttributesCreate(d, meta)
+	if err != nil {
+		return err
+	}
+
 	return resourceUserAttributesRead(d, meta)
 }
 
@@ -161,7 +141,28 @@ func resourceUserAttributesDelete(d *schema.ResourceData, meta interface{}) erro
 	config := meta.(*Config)
 
 	user := &directory.User{}
-	user.CustomSchemas = map[string]googleapi.RawMessage{}
+
+	customSchemas := map[string]googleapi.RawMessage{}
+	for i := 0; i < d.Get("custom_schema.#").(int); i++ {
+		entry := d.Get(fmt.Sprintf("custom_schema.%d", i)).(map[string]interface{})
+
+		customAttributes := map[string]interface{}{}
+		err := json.Unmarshal([]byte(entry["value"].(string)), &customAttributes)
+
+		if err != nil {
+			return fmt.Errorf("Error unmarshalling custom attributes in resource: %s", err)
+		}
+
+		schemaBody := "{"
+		for field := range customAttributes {
+			schemaBody = schemaBody + fmt.Sprintf("\n  \"%s\": null,", field)
+		}
+		// remove the training comma
+		schemaBody = schemaBody[:len(schemaBody)-1] + "\n}"
+
+		customSchemas[entry["name"].(string)] = []byte(schemaBody)
+	}
+	user.CustomSchemas = customSchemas
 
 	var err error
 	err = retry(func() error {
