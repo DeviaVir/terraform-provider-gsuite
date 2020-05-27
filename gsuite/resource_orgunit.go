@@ -48,8 +48,8 @@ func resourceOrgUnitCreate(d *schema.ResourceData, meta interface{}) error {
 	customerId := config.CustomerId
 
 	if v, ok := d.GetOk("orgunit_name"); ok {
-		log.Printf("[DEBUG] Setting %s: %s", "orgunit_name", v.(string))
-		orgunit.Name = strings.ToLower(v.(string))
+		log.Printf("[DEBUG] Creating %s: %s", "orgunit_name", v.(string))
+		orgunit.Name = v.(string)
 	}
 
 	var createdOrgUnit *directory.OrgUnit
