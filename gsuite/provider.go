@@ -56,6 +56,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"gsuite_domain":          resourceDomain(),
+			"gsuite_orgunit":         resourceOrgUnit(),
 			"gsuite_group":           resourceGroup(),
 			"gsuite_group_member":    resourceGroupMember(),
 			"gsuite_group_members":   resourceGroupMembers(),
