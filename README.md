@@ -30,6 +30,10 @@ you will need the following additional scope:
 
     https://www.googleapis.com/auth/admin.directory.userschema
 
+**NOTE 2** If you are creating or modifying group settings
+you will need the following additional scope:
+
+    https://www.googleapis.com/auth/apps.groups.settings
 
 ### Using a service account
 
