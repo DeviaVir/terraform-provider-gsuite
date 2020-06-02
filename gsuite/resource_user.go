@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
+	"github.com/sethvargo/go-password/password"
 	directory "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -485,6 +486,15 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	if v, ok := d.GetOk("password"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "password", v.(string))
 		user.Password = v.(string)
+	}
+
+	if user.Password == "" {
+		res, err := password.Generate(32, 4, 4, false, false)
+		if err != nil {
+			return err
+		}
+		user.Password = res
+		log.Printf("[INFO] A random password was generated for the user")
 	}
 
 	if v, ok := d.GetOk("hash_function"); ok {

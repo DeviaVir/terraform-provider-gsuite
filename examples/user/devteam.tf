@@ -15,13 +15,13 @@ resource "gsuite_user" "developer" {
   #     - The `password` and `hash_function` fields are ignored.
   #   - When running `terraform apply` with a new user resource in your terraform state:
   #     - If the user does not exist in GSuite the following applies:
-  #       - The `password` field must be set or GSuite will reject the request.
+  #       - The `password` field should be set or a secured password will be automatically generated.
   #       - The `hash_function` field must be set only if the `password` field contains a hashed value.
   #       - The GSuite account will be configured to require password change on next login.
   #     - If the user exists in GSuite the following applies:
   #       - The `password` and `hash_function` fields will be ignored.
   #   - When running `terraform apply` with an existing user resource:
-  #     - The `password` and `hash_function` fields will be ignored.
+  #     - Empty `password` and `hash_function` fields will be ignored.
   password = "testtest123!"
 
   primary_email = "developer@sillevis.net"
