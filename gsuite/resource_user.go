@@ -233,6 +233,7 @@ func resourceUser() *schema.Resource {
 			"recovery_email": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 				StateFunc: func(val interface{}) string {
 					return strings.ToLower(val.(string))
 				},
@@ -241,6 +242,7 @@ func resourceUser() *schema.Resource {
 			"recovery_phone": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 				StateFunc: func(val interface{}) string {
 					return strings.ToLower(val.(string))
 				},
