@@ -22,10 +22,6 @@ func resourceGroupSettings() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"is_archived": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"kind": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -82,6 +78,11 @@ func resourceGroupSettings() *schema.Resource {
 				Default:  "false",
 			},
 			"include_in_global_address_list": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "true",
+			},
+			"is_archived": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "true",
@@ -366,6 +367,10 @@ func resourceGroupSettingsCreate(d *schema.ResourceData, meta interface{}) error
 		log.Printf("[DEBUG] Setting %s: %s", "include_in_global_address_list", v.(string))
 		groupSetting.IncludeInGlobalAddressList = v.(string)
 	}
+	if v, ok := d.GetOk("is_archived"); ok {
+		log.Printf("[DEBUG] Setting %s: %s", "is_archived", v.(string))
+		groupSetting.IsArchived = v.(string)
+	}
 	if v, ok := d.GetOk("members_can_post_as_the_group"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "members_can_post_as_the_group", v.(string))
 		groupSetting.MembersCanPostAsTheGroup = v.(string)
@@ -543,6 +548,16 @@ func resourceGroupSettingsUpdate(d *schema.ResourceData, meta interface{}) error
 			log.Printf("[DEBUG] Removing groupSetting IncludeInGlobalAddressList")
 			groupSetting.IncludeInGlobalAddressList = ""
 			nullFields = append(nullFields, "IncludeInGlobalAddressList")
+		}
+	}
+	if d.HasChange("is_archived") {
+		if v, ok := d.GetOk("is_archived"); ok {
+			log.Printf("[DEBUG] Updating is_archived: %s", v.(string))
+			groupSetting.IsArchived = v.(string)
+		} else {
+			log.Printf("[DEBUG] Removing groupSetting IsArchived")
+			groupSetting.IsArchived = ""
+			nullFields = append(nullFields, "IsArchived")
 		}
 	}
 	if d.HasChange("members_can_post_as_the_group") {
@@ -753,6 +768,7 @@ func resourceGroupSettingsRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("favorite_replies_on_top", groupSetting.FavoriteRepliesOnTop)
 	d.Set("include_custom_footer", groupSetting.IncludeCustomFooter)
 	d.Set("include_in_global_address_list", groupSetting.IncludeInGlobalAddressList)
+	d.Set("is_archived", groupSetting.IsArchived)
 	d.Set("members_can_post_as_the_group", groupSetting.MembersCanPostAsTheGroup)
 	d.Set("message_moderation_level", groupSetting.MessageModerationLevel)
 	d.Set("primary_language", groupSetting.PrimaryLanguage)
@@ -799,6 +815,7 @@ func resourceGroupSettingsImporter(d *schema.ResourceData, meta interface{}) ([]
 	d.Set("favorite_replies_on_top", id.FavoriteRepliesOnTop)
 	d.Set("include_custom_footer", id.IncludeCustomFooter)
 	d.Set("include_in_global_address_list", id.IncludeInGlobalAddressList)
+	d.Set("is_archived", id.IsArchived)
 	d.Set("members_can_post_as_the_group", id.MembersCanPostAsTheGroup)
 	d.Set("message_moderation_level", id.MessageModerationLevel)
 	d.Set("primary_language", id.PrimaryLanguage)
