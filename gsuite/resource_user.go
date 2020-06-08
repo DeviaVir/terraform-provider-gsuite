@@ -8,8 +8,11 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+
 	"github.com/pkg/errors"
 	directory "google.golang.org/api/admin/directory/v1"
+	licensing "google.golang.org/api/licensing/v1"
 	"google.golang.org/api/googleapi"
 )
 
@@ -252,6 +255,95 @@ func resourceUser() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "/",
+			},
+
+			"licenses": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Resource {
+					Schema: map[string]*schema.Schema{
+						"gsuite": {
+						    Type:     schema.TypeString,
+						    Optional: true,
+						    Default: "",
+							ValidateFunc: validation.StringInSlice([]string{
+								"ENTERPRISE",
+								"BUSINESS",
+								"BASIC",
+								// "ESSENTIALS", API error
+								"LITE",
+								"MESSAGE_SECURITY",
+								"",
+							}, false),
+						},
+						"gsuite_enterprise_education": {
+						    Type:     schema.TypeString,
+						    Optional: true,
+						    Default: "",
+							ValidateFunc: validation.StringInSlice([]string{
+								"STANDARD",
+								"STUDENT",
+								"",
+							}, false),
+						},
+						"drive_storage": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default: "",
+							ValidateFunc: validation.StringInSlice([]string{
+								"20",
+								"50",
+								"200",
+								"400",
+								"1000",
+								"2000",
+								"4000",
+								"8000",
+								"16000",
+								"",
+							}, false),
+						},
+						"vault": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default: "",
+							ValidateFunc: validation.StringInSlice([]string{
+								"STANDARD",
+								"FORMER_EMPLOYEE",
+								"",
+							}, false),
+						},
+						"cloud_identity": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default: "",
+							ValidateFunc: validation.StringInSlice([]string{
+								"STANDARD",
+								"",
+							}, false),
+						},
+						"cloud_identity_premium": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default: "",
+							ValidateFunc: validation.StringInSlice([]string{
+								"PREMIUM",
+								"",
+							}, false),
+						},
+						"voice": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default: "",
+							ValidateFunc: validation.StringInSlice([]string{
+								"PREMIER",
+								"STARTER",
+								"STANDARD",
+								"",
+							}, false),
+						},
+					},
+				},
 			},
 
 			"ssh_public_keys": {
@@ -535,6 +627,12 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	err = userLicensesUpdate(config, d, createdUser, meta)
+
+	if err != nil {
+		return err
+	}
+
 	d.SetId(createdUser.Id)
 	log.Printf("[INFO] Created user: %s", createdUser.PrimaryEmail)
 	return resourceUserRead(d, meta)
@@ -637,6 +735,154 @@ func userPosixCreate(d *schema.ResourceData, userID string, meta interface{}) er
 		return fmt.Errorf("Error updating user: %s", err)
 	}
 
+	return nil
+}
+
+func userLicensesUpdate(config *Config, d *schema.ResourceData, user *directory.User, meta interface{}) error {
+	products := map[string]map[string]map[string]string {
+		"gsuite": map[string]map[string]string{
+			"identifier": map[string]string{
+				"value": "Google-Apps",
+			},
+			"licenses": map[string]string{
+				"enterprise": "1010020020",
+				"business": "Google-Apps-Unlimited", // Utterly nonsensical
+				"basic": "Google-Apps-For-Business", // See above
+				// "essentials": "1010060001", // API error
+				"lite": "Google-Apps-Lite",
+				"message_security": "Google-Apps-For-Postini",
+			},
+		},
+		"gsuite_enterprise_education": map[string]map[string]string{
+			"identifier": map[string]string{
+				"value": "101031",
+			},
+			"licenses": map[string]string{
+				"standard": "1010310002",
+				"student": "1010310003",
+			},
+		},
+		"drive_storage": map[string]map[string]string{
+			"identifier": map[string]string{
+				"value": "Google-Drive-storage",
+			},
+			"licenses": map[string]string{
+				"20": "Google-Drive-storage-20GB",
+				"50": "Google-Drive-storage-50GB",
+				"200": "Google-Drive-storage-200GB",
+				"400": "Google-Drive-storage-400GB",
+				"1000": "Google-Drive-storage-1TB",
+				"2000": "Google-Drive-storage-2TB",
+				"4000": "Google-Drive-storage-4TB",
+				"8000": "Google-Drive-storage-8TB",
+				"16000": "Google-Drive-storage-16TB",
+			},
+		},
+		"vault": map[string]map[string]string{
+			"identifier": map[string]string{
+				"value": "Google-Vault",
+			},
+			"licenses": map[string]string{
+				"standard": "Google-Vault",
+				"former_employee": "Google-Vault-Former-Employee",
+			},
+		},
+		"cloud_identity": map[string]map[string]string{
+			"identifier": map[string]string{
+				"value": "101001",
+			},
+			"licenses": map[string]string{
+				"standard": "1010010001",
+			},
+		},
+		"cloud_identity_premium": map[string]map[string]string{
+			"identifier": map[string]string{
+				"value": "101005",
+			},
+			"licenses": map[string]string{
+				"premium": "1010050001",
+			},
+		},
+		"voice": map[string]map[string]string{
+			"identifier": map[string]string{
+				"value": "101005",
+			},
+			"licenses": map[string]string{
+				"premier": "1010330002",
+				"starter": "1010330003",
+				"standard": "1010330004",
+			},
+		},
+	}
+	for product, license := range d.Get("licenses").(*schema.Set).List()[0].(map[string]interface{}) {
+		product_sku := products[product]["licenses"][strings.ToLower(license.(string))]
+		product_identifier := products[product]["identifier"]["value"]
+
+		var err error
+		current_sku := ""
+		var licenseAssignment *licensing.LicenseAssignment
+		for _, possible_sku := range products[product]["licenses"] {
+			if possible_sku == "" {
+				continue
+			}
+
+			licenseAssignment, err = config.licensing.LicenseAssignments.Get(
+				product_identifier,
+				possible_sku,
+				user.PrimaryEmail,
+			).Do()
+
+			if err == nil {
+				current_sku = licenseAssignment.SkuId
+				break
+			} else if strings.Contains(string(err.Error()), "notFound") {
+				continue
+			} else {
+				return fmt.Errorf("Error gathering license for user: %s %s", err, possible_sku)
+			}
+		}
+
+		if product_sku != "" && current_sku == "" {
+			licenseAssignmentInsert := &licensing.LicenseAssignmentInsert{}
+			licenseAssignmentInsert.UserId = user.PrimaryEmail
+			err = retry(func() error {
+				_, err =config.licensing.LicenseAssignments.Insert(
+					product_identifier,
+					product_sku,
+					licenseAssignmentInsert,
+				).Do()
+				return err
+			}, config.TimeoutMinutes)
+			if err != nil {
+				return fmt.Errorf("Error assigning license to user: %s", err)
+			}
+		} else if product_sku == "" && current_sku != "" {
+			err = retry(func() error {
+				err = config.licensing.LicenseAssignments.Delete(
+					product_identifier,
+					current_sku,
+					user.PrimaryEmail,
+				).Do()
+				return err
+			}, config.TimeoutMinutes)
+			if err != nil {
+				return fmt.Errorf("Error assigning license to user: %s", err)
+			}
+		} else if product_sku != current_sku {
+			err = retry(func() error {
+				_, err =config.licensing.LicenseAssignments.Update(
+					product_identifier,
+					product_sku,
+					user.PrimaryEmail,
+					licenseAssignment,
+				).Do()
+				return err
+			}, config.TimeoutMinutes)
+			if err != nil {
+				return fmt.Errorf("Error assigning license to user: %s", err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -872,6 +1118,14 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		err = userAliasesUpdate(config, updatedUser, aliases)
+		if err != nil {
+			return err
+		}
+	}
+
+	if d.HasChange("licenses") {
+		err = userLicensesUpdate(config, d, updatedUser, meta)
+
 		if err != nil {
 			return err
 		}

@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
+	licensing "google.golang.org/api/licensing/v1"
 	directory "google.golang.org/api/admin/directory/v1"
 	groupSettings "google.golang.org/api/groupssettings/v1"
 	"google.golang.org/api/option"
@@ -40,6 +41,8 @@ type Config struct {
 	OauthScopes []string
 
 	UpdateExisting bool
+
+	licensing *licensing.Service
 
 	directory *directory.Service
 
@@ -105,6 +108,14 @@ func (c *Config) loadAndValidate(terraformVersion string) error {
 		runtime.GOOS, runtime.GOARCH, terraformVersion)
 
 	context := context.Background()
+
+	// Create the licensing service.
+	licensingSvc, err := licensing.NewService(context, option.WithHTTPClient(client))
+	if err != nil {
+		return err
+	}
+	licensingSvc.UserAgent = userAgent
+	c.licensing = licensingSvc
 
 	// Create the directory service.
 	directorySvc, err := directory.NewService(context, option.WithHTTPClient(client))

@@ -123,6 +123,10 @@ G Suite provider.
 * https://developers.google.com/admin-sdk/directory/v1/reference/groups
 * https://developers.google.com/admin-sdk/directory/v1/reference/schemas
 
+#### Licensing
+* https://developers.google.com/admin-sdk/licensing/v1/get-start/getting-started
+* https://developers.google.com/admin-sdk/licensing/v1/how-tos/products
+
 When using a service account, make sure to add:
 `https://www.googleapis.com/auth/admin.directory.userschema`
 to the `oauth_scopes` list, otherwise you will be missing permissions to manage
