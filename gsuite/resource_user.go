@@ -321,6 +321,62 @@ func resourceUser() *schema.Resource {
 					},
 				},
 			},
+			"organizations": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"cost_center": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"custom_type": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"department": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"description": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"domain": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"full_time_equivalent": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+						"location": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"name": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"primary": {
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
+						"symbol": {
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
+						"title": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"type": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
 			"update_existing": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -423,6 +479,51 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		externalIDs = append(externalIDs, externalID)
 	}
 	user.ExternalIds = externalIDs
+
+	organizations := []*directory.UserOrganization{}
+	for i := 0; i < d.Get("organizations.#").(int); i++ {
+		entry := d.Get(fmt.Sprintf("organizations.%d", i)).(map[string]interface{})
+		organization := &directory.UserOrganization{}
+		if v, ok := entry["cost_center"]; ok {
+			organization.CostCenter = v.(string)
+		}
+		if v, ok := entry["custom_type"]; ok {
+			organization.CustomType = v.(string)
+		}
+		if v, ok := entry["department"]; ok {
+			organization.Department = v.(string)
+		}
+		if v, ok := entry["description"]; ok {
+			organization.Description = v.(string)
+		}
+		if v, ok := entry["domain"]; ok {
+			organization.Domain = v.(string)
+		}
+		if v, ok := entry["full_time_equivalent"]; ok {
+			organization.FullTimeEquivalent = v.(int64)
+		}
+		if v, ok := entry["location"]; ok {
+			organization.Location = v.(string)
+		}
+		if v, ok := entry["name"]; ok {
+			organization.Name = v.(string)
+		}
+		if v, ok := entry["primary"]; ok {
+			organization.Primary = v.(bool)
+		}
+		if v, ok := entry["symbol"]; ok {
+			organization.Symbol = v.(string)
+		}
+		if v, ok := entry["title"]; ok {
+			organization.Title = v.(string)
+		}
+		if v, ok := entry["type"]; ok {
+			organization.Type = v.(string)
+		}
+
+		organizations = append(organizations, organization)
+	}
+	user.Organizations = organizations
 
 	user.SshPublicKeys = userSSHs
 
@@ -844,6 +945,52 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 		user.ExternalIds = externalIDs
 	}
 
+	if d.HasChange("organizations") {
+		organizations := []*directory.UserOrganization{}
+		for i := 0; i < d.Get("organizations.#").(int); i++ {
+			entry := d.Get(fmt.Sprintf("organizations.%d", i)).(map[string]interface{})
+			organization := &directory.UserOrganization{}
+			if v, ok := entry["cost_center"]; ok {
+				organization.CostCenter = v.(string)
+			}
+			if v, ok := entry["custom_type"]; ok {
+				organization.CustomType = v.(string)
+			}
+			if v, ok := entry["department"]; ok {
+				organization.Department = v.(string)
+			}
+			if v, ok := entry["description"]; ok {
+				organization.Description = v.(string)
+			}
+			if v, ok := entry["domain"]; ok {
+				organization.Domain = v.(string)
+			}
+			if v, ok := entry["full_time_equivalent"]; ok {
+				organization.FullTimeEquivalent = v.(int64)
+			}
+			if v, ok := entry["location"]; ok {
+				organization.Location = v.(string)
+			}
+			if v, ok := entry["name"]; ok {
+				organization.Name = v.(string)
+			}
+			if v, ok := entry["primary"]; ok {
+				organization.Primary = v.(bool)
+			}
+			if v, ok := entry["symbol"]; ok {
+				organization.Symbol = v.(string)
+			}
+			if v, ok := entry["title"]; ok {
+				organization.Title = v.(string)
+			}
+			if v, ok := entry["type"]; ok {
+				organization.Type = v.(string)
+			}
+			organizations = append(organizations, organization)
+		}
+		user.Organizations = organizations
+	}
+
 	userNamePrefix := "name"
 	userName := &directory.UserName{
 		FamilyName: d.Get(userNamePrefix + ".family_name").(string),
@@ -931,6 +1078,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
 	d.Set("external_ids", user.ExternalIds)
+	d.Set("organizations", user.Organizations)
 
 	err, flattenedCustomSchema := flattenCustomSchema(user.CustomSchemas)
 	if err != nil {
@@ -996,6 +1144,7 @@ func resourceUserImporter(d *schema.ResourceData, meta interface{}) ([]*schema.R
 	d.Set("posix_accounts", id.PosixAccounts)
 	d.Set("ssh_public_keys", id.SshPublicKeys)
 	d.Set("external_ids", id.ExternalIds)
+	d.Set("organizations", id.Organizations)
 
 	err, flattenedCustomSchema := flattenCustomSchema(id.CustomSchemas)
 	if err != nil {
