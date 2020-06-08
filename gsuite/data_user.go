@@ -235,6 +235,84 @@ func dataUser() *schema.Resource {
 					},
 				},
 			},
+
+			"external_ids": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"custom_type": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"type": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"value": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
+
+			"organizations": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"cost_center": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"custom_type": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"department": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"description": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"domain": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"full_time_equivalent": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"location": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"primary": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"symbol": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"title": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"type": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -281,6 +359,8 @@ func dataUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("posix_accounts", user.PosixAccounts)
 	d.Set("ssh_public_keys", user.SshPublicKeys)
 	d.Set("custom_schema", user.CustomSchemas)
+	d.Set("external_ids", user.ExternalIds)
+	d.Set("organizations", user.Organizations)
 
 	return nil
 }
