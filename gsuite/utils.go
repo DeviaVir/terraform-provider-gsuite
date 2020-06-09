@@ -54,39 +54,32 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 		rand.Seed(time.Now().UnixNano())
 		randomNumberMiliseconds := rand.Intn(1001)
 
-		if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
-			log.Printf("[DEBUG] Retrying server error code...")
-			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
-			wait = wait * 2
-			return resource.RetryableError(gerr)
-		}
+		if gerr, ok := err.(*googleapi.Error); ok {
+			code := gerr.Code
+			var reason string
+			if len(gerr.Errors) > 0 {
+				reason = gerr.Errors[0].Reason
+			}
 
-		if retryPassDuplicate {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 429) {
-				log.Printf("[DEBUG] Retrying quota/server error code...")
+			if code == 500 || code == 502 || code == 503 {
+				log.Printf("[DEBUG] Retrying server error code...")
 				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
 				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
-		} else {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "quotaExceeded" || gerr.Code == 401 || gerr.Code == 409 || gerr.Code == 429) {
-				log.Printf("[DEBUG] Retrying quota/server error code...")
-				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
-				wait = wait * 2
-				return resource.RetryableError(gerr)
+			if reason == "quotaExceeded" || code == 401 || code == 429 || (!retryPassDuplicate && code == 409) {
+					log.Printf("[DEBUG] Retrying quota/server error code...")
+					time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+					wait = wait * 2
+					return resource.RetryableError(gerr)
 			}
-		}
-		if retryNotFound {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 404) {
+			if retryNotFound && code == 404 {
 				log.Printf("[DEBUG] Retrying for eventual consistency...")
 				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
 				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
-		}
-
-		if retryInvalid {
-			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Errors[0].Reason == "invalid" || gerr.Code == 400) {
+			if retryInvalid && reason == "invalid" || code == 400 {
 				log.Printf("[DEBUG] Retrying invalid error code...")
 				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
 				wait = wait * 2
