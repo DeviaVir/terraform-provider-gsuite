@@ -363,7 +363,7 @@ func resourceUser() *schema.Resource {
 							Optional: true,
 						},
 						"symbol": {
-							Type:     schema.TypeBool,
+							Type:     schema.TypeString,
 							Optional: true,
 						},
 						"title": {
@@ -500,7 +500,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 			organization.Domain = v.(string)
 		}
 		if v, ok := entry["full_time_equivalent"]; ok {
-			organization.FullTimeEquivalent = v.(int64)
+			organization.FullTimeEquivalent = int64(v.(int))
 		}
 		if v, ok := entry["location"]; ok {
 			organization.Location = v.(string)
@@ -966,7 +966,7 @@ func resourceUserUpdate(d *schema.ResourceData, meta interface{}) error {
 				organization.Domain = v.(string)
 			}
 			if v, ok := entry["full_time_equivalent"]; ok {
-				organization.FullTimeEquivalent = v.(int64)
+				organization.FullTimeEquivalent = int64(v.(int))
 			}
 			if v, ok := entry["location"]; ok {
 				organization.Location = v.(string)

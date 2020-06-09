@@ -299,7 +299,7 @@ func dataUser() *schema.Resource {
 							Computed: true,
 						},
 						"symbol": {
-							Type:     schema.TypeBool,
+							Type:     schema.TypeString,
 							Computed: true,
 						},
 						"title": {
