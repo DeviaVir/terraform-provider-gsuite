@@ -815,40 +815,40 @@ func userLicensesUpdate(config *Config, d *schema.ResourceData, user *directory.
 		},
 	}
 	for product, license := range d.Get("licenses").(*schema.Set).List()[0].(map[string]interface{}) {
-		product_sku := products[product]["licenses"][strings.ToLower(license.(string))]
-		product_identifier := products[product]["identifier"]["value"]
+		productSku := products[product]["licenses"][strings.ToLower(license.(string))]
+		productID := products[product]["identifier"]["value"]
 
 		var err error
-		current_sku := ""
+		currentSku := ""
 		var licenseAssignment *licensing.LicenseAssignment
-		for _, possible_sku := range products[product]["licenses"] {
-			if possible_sku == "" {
+		for _, possibleSku := range products[product]["licenses"] {
+			if possibleSku == "" {
 				continue
 			}
 
 			licenseAssignment, err = config.licensing.LicenseAssignments.Get(
-				product_identifier,
-				possible_sku,
+				productID,
+				possibleSku,
 				user.PrimaryEmail,
 			).Do()
 
 			if err == nil {
-				current_sku = licenseAssignment.SkuId
+				currentSku = licenseAssignment.SkuId
 				break
 			} else if strings.Contains(string(err.Error()), "notFound") {
 				continue
 			} else {
-				return fmt.Errorf("Error gathering license for user: %s %s", err, possible_sku)
+				return fmt.Errorf("Error gathering license for user: %s %s", err, possibleSku)
 			}
 		}
 
-		if product_sku != "" && current_sku == "" {
+		if productSku != "" && currentSku == "" {
 			licenseAssignmentInsert := &licensing.LicenseAssignmentInsert{}
 			licenseAssignmentInsert.UserId = user.PrimaryEmail
 			err = retry(func() error {
 				_, err =config.licensing.LicenseAssignments.Insert(
-					product_identifier,
-					product_sku,
+					productID,
+					productSku,
 					licenseAssignmentInsert,
 				).Do()
 				return err
@@ -856,11 +856,11 @@ func userLicensesUpdate(config *Config, d *schema.ResourceData, user *directory.
 			if err != nil {
 				return fmt.Errorf("Error assigning license to user: %s", err)
 			}
-		} else if product_sku == "" && current_sku != "" {
+		} else if productSku == "" && currentSku != "" {
 			err = retry(func() error {
 				err = config.licensing.LicenseAssignments.Delete(
-					product_identifier,
-					current_sku,
+					productID,
+					currentSku,
 					user.PrimaryEmail,
 				).Do()
 				return err
@@ -868,11 +868,11 @@ func userLicensesUpdate(config *Config, d *schema.ResourceData, user *directory.
 			if err != nil {
 				return fmt.Errorf("Error assigning license to user: %s", err)
 			}
-		} else if product_sku != current_sku {
+		} else if productSku != currentSku {
 			err = retry(func() error {
 				_, err =config.licensing.LicenseAssignments.Update(
-					product_identifier,
-					product_sku,
+					productID,
+					productSku,
 					user.PrimaryEmail,
 					licenseAssignment,
 				).Do()
