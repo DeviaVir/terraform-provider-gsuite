@@ -19,7 +19,7 @@ GOVERSION := 1.14
 PROJECT := github.com/DeviaVir/terraform-provider-gsuite
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
 NAME := $(notdir $(PROJECT))
-VERSION := 0.1.46
+VERSION := 0.1.47
 EXTERNAL_TOOLS = \
 	github.com/golang/dep/cmd/dep
 
@@ -146,7 +146,7 @@ _cleanup:
 	@rm -rf "${CURRENT_DIR}/bin/"
 .PHONY: _cleanup
 
-# _compress compresses all the binaries in pkg/* as tarball and zip.
+# _compress compresses all the binaries in pkg/* as zip.
 _compress:
 	@mkdir -p "${CURRENT_DIR}/pkg/dist"
 	@for platform in $$(find ./pkg -mindepth 1 -maxdepth 1 -type d); do \
@@ -160,7 +160,6 @@ _compress:
 			ext=".exe"; \
 		fi; \
 		cd "$$platform"; \
-		tar -czf "${CURRENT_DIR}/pkg/dist/${NAME}_${VERSION}_$${osarch}.tgz" "${NAME}_v${VERSION}$${ext}"; \
 		zip -q "${CURRENT_DIR}/pkg/dist/${NAME}_${VERSION}_$${osarch}.zip" "${NAME}_v${VERSION}$${ext}"; \
 		cd - &>/dev/null; \
 	done
