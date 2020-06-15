@@ -583,7 +583,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	// Transimt password related state on account creation only.
+	// Transmit password related state on account creation only.
 	if v, ok := d.GetOk("password"); ok {
 		log.Printf("[DEBUG] Setting %s: %s", "password", v.(string))
 		user.Password = v.(string)
