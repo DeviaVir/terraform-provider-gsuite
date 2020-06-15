@@ -92,6 +92,17 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("[ERROR] Error creating group: %s", err)
 	}
 
+	// Try to read the group, retrying for 404's, this makes sure the group has been
+	// created before we try to use it for follow-up actions (like adding aliases)
+	err = retryNotFound(func() error {
+		group, err = config.directory.Groups.Get(createdGroup.Id).Do()
+		return err
+	}, config.TimeoutMinutes)
+
+	if err != nil {
+		return fmt.Errorf("[ERROR] Taking too long to create this group: %s", err)
+	}
+
 	// Handle group aliases
 	aliasesCount := d.Get("aliases.#").(int)
 	for i := 0; i < aliasesCount; i++ {
@@ -107,16 +118,6 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error creating group aliases: %s", err)
-	}
-
-	// Try to read the group, retrying for 404's
-	err = retryNotFound(func() error {
-		group, err = config.directory.Groups.Get(createdGroup.Id).Do()
-		return err
-	}, config.TimeoutMinutes)
-
-	if err != nil {
-		return fmt.Errorf("[ERROR] Taking too long to create this group: %s", err)
 	}
 
 	d.SetId(createdGroup.Id)
