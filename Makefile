@@ -1,6 +1,7 @@
 # Metadata about this makefile and position
 MKFILE_PATH := $(lastword $(MAKEFILE_LIST))
 CURRENT_DIR := $(patsubst %/,%,$(dir $(realpath $(MKFILE_PATH))))
+WEBSITE_REPO := github.com/hashicorp/terraform-website
 
 # Ensure GOPATH
 GOPATH ?= $(HOME)/go
@@ -16,7 +17,8 @@ GOMAXPROCS ?= 8
 
 # Get the project metadata
 GOVERSION := 1.14
-PROJECT := github.com/DeviaVir/terraform-provider-gsuite
+PKG_NAME := gsuite
+PROJECT := github.com/DeviaVir/terraform-provider-$(PKG_NAME)
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
 NAME := $(notdir $(PROJECT))
 VERSION := 0.1.49
@@ -106,7 +108,7 @@ dev: vendor
 		-mod vendor \
 		-ldflags "${LD_FLAGS}" \
 		-tags "${GOTAGS}" \
-		-o "${PLUGIN_PATH}/terraform-provider-gsuite"
+		-o "${PLUGIN_PATH}/terraform-provider-${PKG_NAME}"
 
 # test runs all tests
 test:
@@ -198,3 +200,19 @@ _sign:
 	@echo ""
 	@echo "And then upload the binaries in dist/!"
 .PHONY: _sign
+
+website:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
+.PHONY: website
+
+website-test:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
+.PHONY: website-test

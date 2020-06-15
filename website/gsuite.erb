@@ -1,0 +1,77 @@
+<% wrap_layout :inner do %>
+    <% content_for :sidebar do %>
+        <div class="docs-sidebar hidden-print affix-top" role="complementary">
+            <ul class="nav docs-sidenav">
+                <li<%= sidebar_current("docs-home") %>>
+                    <a href="/docs/providers/index.html">All Providers</a>
+                </li>
+
+                <li<%= sidebar_current("docs-gsuite-index") %>>
+                    <a href="/docs/providers/gsuite/index.html">G Suite Provider</a>
+                </li>
+
+                <li<%= sidebar_current("docs-gsuite-datasource") %>>
+                <a href="#">Data Sources</a>
+                    <ul class="nav nav-visible">
+
+                        <li<%= sidebar_current("docs-gsuite-datasource-group-settings") %>>
+                            <a href="/docs/providers/gsuite/d/group_settings.html">gsuite_group_settings</a>
+                        </li>
+                        <li<%= sidebar_current("docs-gsuite-datasource-group") %>>
+                            <a href="/docs/providers/gsuite/d/group.html">gsuite_group</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-gsuite-datasource-user-attributes") %>>
+                            <a href="/docs/providers/gsuite/d/user_attributes.html">gsuite_user_attributes</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-gsuite-datasource-user") %>>
+                            <a href="/docs/providers/gsuite/d/user.html">gsuite_user</a>
+                        </li>
+
+                    </ul>
+                </li>
+
+                <li<%= sidebar_current("docs-gsuite-resource") %>>
+                    <a href="#">Resources</a>
+                    <ul class="nav nav-visible">
+                        <li<%= sidebar_current("docs-gsuite-resource-domain") %>>
+                            <a href="/docs/providers/gsuite/r/domain.html">gsuite_domain</a>
+                        </li>
+                        <li<%= sidebar_current("docs-gsuite-resource-group-member") %>>
+                            <a href="/docs/providers/gsuite/r/group_member.html">gsuite_group_member</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-gsuite-resource-group-members") %>>
+                            <a href="/docs/providers/gsuite/r/group_members.html">gsuite_group_members</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-gsuite-resource-group-settings") %>>
+                            <a href="/docs/providers/gsuite/r/group_settings.html">gsuite_group_settings</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-gsuite-resource-group") %>>
+                            <a href="/docs/providers/gsuite/r/group.html">gsuite_group</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-gsuite-resource-user-attributes") %>>
+                            <a href="/docs/providers/gsuite/r/user_attributes.html">gsuite_user_attributes</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-gsuite-resource-user-schema") %>>
+                            <a href="/docs/providers/gsuite/r/user_schema.html">gsuite_user_schema</a>
+                        </li>
+
+                        <li<%= sidebar_current("docs-gsuite-resource-user") %>>
+                            <a href="/docs/providers/gsuite/r/user.html">gsuite_user</a>
+                        </li>
+
+                    </ul>
+                </li>
+
+            </ul>
+        </div>
+    <% end %>
+
+    <%= yield %>
+<% end %>

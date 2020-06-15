@@ -1,6 +1,22 @@
-// The below define a custom directory user schema. For additional details on
-// possible types of fields, their values, etc see Google's reference documentation:
-//     https://developers.google.com/admin-sdk/directory/v1/reference/schemas
+---
+layout: "gsuite"
+page_title: "G Suite: gsuite_user_attributes"
+sidebar_current: "docs-gsuite-resource-user-attributes"
+description: |-
+  Manage a G Suite's user's attributes.
+---
+
+# gsuite\_user\_attributes
+
+Provides a resource to create and manage a User's attributes, currently limited
+to the Custom Schema.
+
+**Note:** requires the `https://www.googleapis.com/auth/admin.directory.userschema`
+oauth scope.
+
+## Example Usage
+
+```hcl
 resource "gsuite_user_schema" "details" {
   schema_name  = "additional-details" // Required
   display_name = "Additional Details" // Optional (default: value of `schema_name`)
@@ -25,7 +41,7 @@ data "gsuite_user_attributes" "details" {
 }
 
 resource "gsuite_user" "user" {
-  primary_email = "flast@example.com"
+  primary_email = "flast@domain.ext"
 
   name {
     given_name  = "First"
@@ -35,5 +51,24 @@ resource "gsuite_user" "user" {
 
 resource "gsuite_user_attributes" "user_attributes" {
   primary_email = gsuite_user.user.primary_email
-  custom_schema = data.gsuite_user_attributes.details.json
+  custom_schema =  data.gsuite_user_attributes.details.json
 }
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `primary_email` - (Required; Forces new resource) Email address of the G Suite
+  user.
+
+* `custom_schema` - (Required) The `gsuite_user_schema` custom schema for this
+  user.
+
+## Import
+
+G Suite User Attributes can be imported using `group-email`, e.g.:
+
+```
+terraform import gsuite_user_attributes.user_attributes "flast@domain.ext"
+```
