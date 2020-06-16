@@ -146,7 +146,7 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 		var existingSchemas *directory.Schemas
 		err = retry(func() error {
 			existingSchemas, err = config.directory.Schemas.List(config.CustomerId).Do()
-		 	return err
+			return err
 		}, config.TimeoutMinutes)
 
 		if err != nil {
@@ -164,7 +164,7 @@ func resourceUserSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("[ERROR] Error locating existing user schema %s", userSchema.SchemaName)
 		}
 		log.Printf("[INFO] found existing user schema %s", locatedSchema.SchemaName)
-	
+
 		var err error
 		err = retry(func() error {
 			_, err = config.directory.Schemas.Update(config.CustomerId, locatedSchema.SchemaId, userSchema).Do()

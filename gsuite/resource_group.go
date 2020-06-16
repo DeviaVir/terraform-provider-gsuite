@@ -89,6 +89,11 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	}, config.TimeoutMinutes)
 
 	if err != nil {
+		if config.UpdateExisting && strings.Contains(fmt.Sprintf("%s", err), "Entity already exists.") {
+			log.Printf("[INFO] Group already exists, overwriting existing values")
+			d.SetId(d.Get("email").(string))
+			return resourceGroupUpdate(d, meta)
+		}
 		return fmt.Errorf("[ERROR] Error creating group: %s", err)
 	}
 
@@ -102,6 +107,9 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("[ERROR] Taking too long to create this group: %s", err)
 	}
+
+	d.SetId(createdGroup.Id)
+	log.Printf("[INFO] Created group: %s", createdGroup.Email)
 
 	// Handle group aliases
 	aliasesCount := d.Get("aliases.#").(int)
@@ -120,8 +128,6 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("[ERROR] Error creating group aliases: %s", err)
 	}
 
-	d.SetId(createdGroup.Id)
-	log.Printf("[INFO] Created group: %s", createdGroup.Email)
 	return resourceGroupRead(d, meta)
 }
 
@@ -172,6 +178,9 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("[ERROR] Error updating group: %s", err)
 	}
+
+	// in case we were updating an existing we set the id back to the API ID
+	d.SetId(updatedGroup.Id)
 
 	// Handle group aliases
 	var aliasesResponse *directory.Aliases
