@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	directory "google.golang.org/api/admin/directory/v1"
@@ -87,6 +88,9 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 		createdGroup, err = config.directory.Groups.Insert(group).Do()
 		return err
 	}, config.TimeoutMinutes)
+
+	// give the eventually consistent G Suite time to settle the group
+	time.Sleep(time.Second * 1)
 
 	if err != nil {
 		if config.UpdateExisting && strings.Contains(fmt.Sprintf("%s", err), "Entity already exists.") {
