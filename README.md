@@ -1,5 +1,5 @@
-# :warning: G Suite Infrastructure provider
-**Deleting this repository can break the private [infrastructure-gsuite](https://github.com/helpfulengineering/infrastructure-gsuite).**
+# G Suite Infrastructure Provider
+:warning: **Deleting this repository can break [infrastructure-gsuite](https://github.com/helpfulengineering/infrastructure-gsuite).**
 
 > # Terraform G Suite Provider
 > 
