@@ -51,7 +51,10 @@ resource "gsuite_user" "user" {
 
 resource "gsuite_user_attributes" "user_attributes" {
   primary_email = gsuite_user.user.primary_email
-  custom_schema =  data.gsuite_user_attributes.details.json
+  custom_schema {
+    name  = gsuite_user_schema.details.schema_name
+    value = data.gsuite_user_attributes.details.json
+  }
 }
 ```
 
