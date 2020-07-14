@@ -56,7 +56,7 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 
 		if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 500 || gerr.Code == 502 || gerr.Code == 503) {
 			log.Printf("[DEBUG] Retrying server error code...")
-			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 			wait = wait * 2
 			return resource.RetryableError(gerr)
 		}
@@ -69,7 +69,7 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 
 		if hasErrors && gerr.Errors[0].Reason == "quotaExceeded" {
 			log.Printf("[DEBUG] Retrying quota/server error code...")
-			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 			wait = wait * 2
 			return resource.RetryableError(gerr)
 		}
@@ -77,14 +77,14 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 		if retryPassDuplicate {
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 401 || gerr.Code == 429) {
 				log.Printf("[DEBUG] Retrying quota/server error code...")
-				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
 		} else {
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 401 || gerr.Code == 409 || gerr.Code == 429) {
 				log.Printf("[DEBUG] Retrying quota/server error code...")
-				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
@@ -93,7 +93,7 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 		if retryNotFound {
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 404) {
 				log.Printf("[DEBUG] Retrying for eventual consistency...")
-				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
@@ -102,13 +102,13 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 		if retryInvalid {
 			if gerr, ok := err.(*googleapi.Error); ok && (gerr.Code == 400) {
 				log.Printf("[DEBUG] Retrying invalid error code...")
-				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
 			if hasErrors && gerr.Errors[0].Reason == "invalid" {
 				log.Printf("[DEBUG] Retrying invalid error reason...")
-				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+				time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 				wait = wait * 2
 				return resource.RetryableError(gerr)
 			}
@@ -117,19 +117,19 @@ func retryTime(retryFunc func() error, minutes int, retryNotFound bool, retryPas
 		// Deal with the broken API
 		if strings.Contains(fmt.Sprintf("%s", err), "Invalid Input: Bad request for \"") && strings.Contains(fmt.Sprintf("%s", err), "\"code\":400") {
 			log.Printf("[DEBUG] Retrying invalid response from API")
-			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 			wait = wait * 2
 			return resource.RetryableError(err)
 		}
 		if strings.Contains(fmt.Sprintf("%s", err), "Service unavailable. Please try again") {
 			log.Printf("[DEBUG] Retrying service unavailable from API")
-			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 			wait = wait * 2
 			return resource.RetryableError(err)
 		}
 		if strings.Contains(fmt.Sprintf("%s", err), "Eventual consistency. Please try again") {
 			log.Printf("[DEBUG] Retrying due to eventual consistency")
-			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds))
+			time.Sleep(time.Duration(wait)*time.Second + time.Duration(randomNumberMiliseconds)*time.Millisecond)
 			wait = wait * 2
 			return resource.RetryableError(err)
 		}
