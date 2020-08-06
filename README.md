@@ -29,7 +29,7 @@ Installing the Provider
 
     ```sh
     $ mkdir -p $HOME/.terraform.d/plugins
-    $ mv terraform-provider-gsuite $HOME/.terraform.d/plugins/terraform-provider-gsuite
+    $ mv terraform-provider-gsuite_vX.Y.Z $HOME/.terraform.d/plugins/terraform-provider-gsuite_vX.Y.Z
     ```
 
 1. Create your Terraform configurations as normal, and run `terraform init`:
