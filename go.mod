@@ -1,6 +1,6 @@
 module github.com/DeviaVir/terraform-provider-gsuite
 
-go 1.14
+go 1.15
 
 require (
 	github.com/hashicorp/terraform-plugin-sdk v1.13.0

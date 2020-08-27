@@ -16,12 +16,12 @@ GOTAGS ?=
 GOMAXPROCS ?= 8
 
 # Get the project metadata
-GOVERSION := 1.14
+GOVERSION := 1.15
 PKG_NAME := gsuite
 PROJECT := github.com/DeviaVir/terraform-provider-$(PKG_NAME)
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
 NAME := $(notdir $(PROJECT))
-VERSION := 0.1.54
+VERSION := 0.1.55
 EXTERNAL_TOOLS = \
 	github.com/golang/dep/cmd/dep
 
