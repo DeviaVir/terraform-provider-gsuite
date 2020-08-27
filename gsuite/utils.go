@@ -187,6 +187,7 @@ func validateEmail(v interface{}, k string) (warnings []string, errors []error) 
 	if err != nil {
 		errors = append(errors,
 			fmt.Errorf("unable to parse email address %s", email))
+		return
 	}
 
 	if e.Name != "" {

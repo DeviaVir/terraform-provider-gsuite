@@ -14,6 +14,7 @@ func TestValidateEmail(t *testing.T) {
 		{"Alice <alice@example.com>", false},
 		{"much-much-much-much-much-much-much-much-much-much-much-much-too-long@domain.com", false},
 		{"\"some@much-much-much-much-much-much-much-much-much-much-much-much-too-long\"@domain.com", false},
+		{"not an email address", false},
 	}
 
 	for _, testCase := range testCases {
