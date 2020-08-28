@@ -38,7 +38,7 @@ resource "gsuite_user" "developer" {
     "chase@domain.ext"
   ]
 
-  name {
+  name = {
     family_name = "Sillevis"
     given_name  = "Chase"
   }
