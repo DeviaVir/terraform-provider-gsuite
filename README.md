@@ -1,5 +1,5 @@
 # G Suite Infrastructure Provider
-:warning: **Deleting this repository can break [infrastructure-gsuite](https://github.com/helpfulengineering/infrastructure-gsuite).**
+:warning: **Warning: deleting this repository can break [infrastructure-gsuite](https://github.com/helpfulengineering/infrastructure-gsuite).**
 
 > # Terraform G Suite Provider
 > 
