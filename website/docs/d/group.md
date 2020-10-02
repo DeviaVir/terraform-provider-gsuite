@@ -32,6 +32,8 @@ The following arguments are supported:
 
 In addition to the above arguments, the following attributes are exported:
 
+* `id`
+
 * `aliases`
 
 * `name`
