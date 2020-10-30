@@ -88,10 +88,12 @@ The following arguments are supported:
   email addresses.
 
 * `include_in_global_list` - (Optional) Boolean switch to show or hide this user
-  in the global list. Defaults to true.
+  in the global list. 
+  Valid values are `true` or `false`. Defaults to `true`.
 
 * `is_ip_whitelisted` - (Optional) Boolean switch to enforce whitelisting of the
   user's IP.
+  Valid values are `true` or `false`. Defaults to `false`.
 
 * `hash_function` - (Optional) `md5`, `sha-1` or `crypt`
 
