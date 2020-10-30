@@ -88,23 +88,25 @@ The following arguments are supported:
   email addresses.
 
 * `include_in_global_list` - (Optional) Boolean switch to show or hide this user
-  in the global list. Defaults to true.
+  in the global list. 
+  Valid values are `true` or `false`. Defaults to `true`.
 
 * `is_ip_whitelisted` - (Optional) Boolean switch to enforce whitelisting of the
   user's IP.
+  Valid values are `true` or `false`. Defaults to `false`.
 
 * `hash_function` - (Optional) `md5`, `sha-1` or `crypt`
 
 * `posix_accounts` - (Optional) List with the following schema:
-  * `account_id`
-  * `gecos`
-  * `gid`
-  * `home_directory`
-  * `shell`
-  * `system_id`
-  * `primary`
-  * `uid`
-  * `username`
+  * `account_id` - A POSIX account field identifier.
+  * `gecos` - The GECOS (user information) for this account.
+  * `gid` - The default group ID.
+  * `home_directory` - The path to the home directory for this account.
+  * `shell` - The path to the login shell for this account.
+  * `system_id` - System identifier for which account Username or Uid apply to.
+  * `primary` - If this is user's primary account within the SystemId.
+  * `uid` - The POSIX compliant user ID.
+  * `username` - The username of the account.
 
 * `recovery_email` - (Optional) Recovery email of the user. Does not have to be
   in the domain.
@@ -115,8 +117,8 @@ The following arguments are supported:
 
 * `ssh_public_keys` - (Optional) SSH public keys of the user. Schema contains
   the following items:
-  * `expiration_time_usec`
-  * `key`
+  * `expiration_time_usec` - An expiration time in microseconds since epoch.
+  * `key` - An SSH public key.
 
 * `is_suspended` - (Optional) Suspend the user, defaults to false.
 
@@ -125,53 +127,57 @@ The following arguments are supported:
 * `custom_schema` - (Optional) See `user_custom_schema` for more details.
 
 * `external_ids` - (Optional) List of `external_ids`. Schema contains:
-  * `custom_type`
-  * `type`
-  * `value`
+  * `custom_type` - Custom type.
+  * `type` - The type of the Id.
+  * `value` - The value of the id.
 
 * `update_existing` - (Optional) Boolean, defaults to false. Allows overwriting
   existing values instead of erroring out when a user already exists.
 
 * `organizations` - (Optional) List of organizations. Schema of organization
   contains:
-  * `cost_center`
-  * `custom_type`
-  * `department`
-  * `description`
-  * `domain`
-  * `full_time_equivalent`
-  * `location`
-  * `name`
-  * `primary`
-  * `symbol`
-  * `title`
-  * `type`
+  * `cost_center` - The cost center of the users department.
+  * `custom_type` - Custom type.
+  * `department` - Department within the organization.
+  * `description` - Description of the organization.
+  * `domain` - The domain to which the organization belongs to.
+  * `full_time_equivalent` - The full-time equivalent millipercent within the organization (100000 = 100%).
+  * `location` - Location of the organization. This need not be fully qualified address.
+  * `name` - Name of the organization.
+  * `primary` - If it user's primary organization.
+  * `symbol` - Symbol of the organization.
+  * `title` - Title (designation) of the user in the organization.
+  * `type` - Each entry can have a type which indicates standard types of
+    that entry. For example organization could be of school, work etc. In
+    addition to the standard type, an entry can have a custom type and
+    can give it any name. Such types should have the CUSTOM value as type
+    and also have a CustomType value.
 
 ## Attribute Reference
 
 In addition to the above arguments, the following attributes are exported:
 
-* `deletion_time`
+* `deletion_time` - User's G Suite account deletion time.
 
-* `agreed_to_terms`
+* `agreed_to_terms` - Indicates if user has agreed to terms.
 
-* `creation_time`
+* `creation_time` - User's G Suite account creation time.
 
-* `customer_id`
+* `customer_id` - CustomerId of User. 
 
-* `etag`
+* `etag` - ETag of the resource.
 
-* `is_admin`
+* `is_admin` - Boolean indicating if the user is admin.
 
-* `is_delegated_admin`
+* `is_delegated_admin` - Boolean indicating if the user is delegated admin.
 
-* `2s_enforced`
+* `2s_enforced` - Is 2-step verification enforced.
 
-* `2s_enrolled`
+* `2s_enrolled` - Is enrolled in 2-step verification.
 
-* `is_mailbox_setup`
+* `is_mailbox_setup` - Is mailbox setup.
 
-* `last_login_time`
+* `last_login_time` - User's last login time.
 
 ## Import
 

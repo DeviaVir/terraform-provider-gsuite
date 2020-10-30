@@ -252,7 +252,7 @@ The following arguments are supported:
 
 In addition to the above arguments, the following attributes are exported:
 
-* `schema_id`
+* `schema_id` - Unique identifier of Schema.
 
 
 ## Import

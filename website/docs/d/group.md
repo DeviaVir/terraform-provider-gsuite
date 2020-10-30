@@ -32,18 +32,18 @@ The following arguments are supported:
 
 In addition to the above arguments, the following attributes are exported:
 
-* `id`
+* `id` - Unique identifier of Group.
 
-* `aliases`
+* `aliases` - List of aliases.
 
-* `name`
+* `name` - Group name.
 
-* `description`
+* `description` - Description of the group.
 
-* `direct_members_count`
+* `direct_members_count` - Group direct members count.
 
-* `admin_created`
+* `admin_created` - Is the group created by admin.
 
-* `non_editable_aliases`
+* `non_editable_aliases` - List of non editable aliases.
 
 * `member` - Lists the set of members in this group.
