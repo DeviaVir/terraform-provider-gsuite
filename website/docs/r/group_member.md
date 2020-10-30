@@ -41,13 +41,13 @@ The following arguments are supported:
 
 In addition to the above arguments, the following attributes are exported:
 
-* `etag`
+* `etag` - ETag of the resource.
 
-* `kind`
+* `kind` - Kind of resource this is.
 
-* `status`
+* `status` - Status of member.
 
-* `type`
+* `type`- Type of member.
 
 ## Import
 

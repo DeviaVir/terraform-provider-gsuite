@@ -29,19 +29,19 @@ The following arguments are supported:
 
 * `aliases` - (Optional) Provide a list of aliases for this Group.
 
-* `name` - (Optional)
+* `name` - (Optional) Group name.
 
-* `description` - (Optional)
+* `description` - (Optional) Description of the group.
 
 ## Attribute Reference
 
 In addition to the above arguments, the following attributes are exported:
 
-* `direct_members_count`
+* `direct_members_count` - Group direct members count.
 
-* `admin_created`
+* `admin_created` - Is the group created by admin.
 
-* `non_editable_aliases`
+* `non_editable_aliases` - List of non editable aliases.
 
 ## Import
 

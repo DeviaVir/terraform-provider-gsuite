@@ -31,9 +31,9 @@ The following arguments are supported:
 
 In addition to the above arguments, the following attributes are exported:
 
-* `creation_time`
+* `creation_time` - Creation time of the domain.
 
-* `etag`
+* `etag` - ETag of the resource.
 
 ## Import
 

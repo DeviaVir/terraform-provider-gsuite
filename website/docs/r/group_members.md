@@ -49,12 +49,12 @@ The following arguments are supported:
 In addition to the above arguments, the following attributes are exported:
 
 * `members` - contains the set of members, with the following schema:
-  * `email`
-  * `etag`
-  * `kind`
-  * `status`
-  * `type`
-  * `role`
+  * `email` - Email of member.
+  * `etag` - ETag of the resource.
+  * `kind` - Kind of resource this is.
+  * `status` - Status of member.
+  * `type` - Type of member.
+  * `role` - Role of member.
 
 ## Import
 
