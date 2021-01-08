@@ -198,10 +198,6 @@ func reconcileMembers(d *schema.ResourceData, cfgMembers, apiMembers []map[strin
 					Role: cfgRole,
 				}
 
-				if cfgRole != "MEMBER" {
-					return fmt.Errorf("[ERROR] Error updating groupMember (%s): nested groups should be role MEMBER", cfgMember["email"].(string))
-				}
-
 				var updatedGroupMember *directory.Member
 				var err error
 				err = retryNotFound(func() error {
