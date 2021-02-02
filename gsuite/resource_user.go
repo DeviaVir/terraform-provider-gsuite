@@ -57,12 +57,66 @@ func flattenCustomSchema(schema map[string]googleapi.RawMessage) (error, []map[s
 			return err, result
 		}
 
+		err, value = orderValues(value)
+
 		customSchemaMap["value"] = value
 		result = append(result, customSchemaMap)
 	}
 
 	//Everything was fine, return the map and nil for the error
 	return nil, result
+}
+
+type customValue map[string]interface{}
+type customValues []customValue
+
+func (s customValues) Len() int {
+	return len(s)
+}
+func (s customValues) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s customValues) Less(i, j int) bool {
+	valuei, oki := s[i]["value"].(string)
+	valuej, okj := s[j]["value"].(string)
+
+	if oki && okj {
+		return valuei < valuej
+	}
+
+	return true
+}
+
+func orderValues(j string) (error, string) {
+	schemaValue := map[string]interface{}{}
+
+	orderedSchemaValue := map[string]interface{}{}
+
+	err := json.Unmarshal([]byte(j), &schemaValue)
+
+	for key, values := range schemaValue {
+		// Let's sort the values objects array by "value" key to prevent diffs on every plan
+		if valuesArr, ok := values.([]interface{}); ok {
+
+			typedValues := customValues{}
+			for _, untypedValue := range valuesArr {
+				if value, ok := untypedValue.(map[string]interface{}); ok {
+					typedValues = append(typedValues, value)
+				}
+			}
+
+			sort.Sort(typedValues)
+
+			orderedSchemaValue[key] = typedValues
+		} else {
+			// Should be a single string and not an array, do nothing
+			orderedSchemaValue[key] = schemaValue[key]
+		}
+	}
+
+	s, err := json.Marshal(orderedSchemaValue)
+
+	return err, string(s)
 }
 
 func resourceUser() *schema.Resource {
