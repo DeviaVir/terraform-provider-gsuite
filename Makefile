@@ -21,7 +21,7 @@ PKG_NAME := gsuite
 PROJECT := github.com/DeviaVir/terraform-provider-$(PKG_NAME)
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
 NAME := $(notdir $(PROJECT))
-VERSION := 0.1.56
+VERSION := 0.1.58
 EXTERNAL_TOOLS = \
 	github.com/golang/dep/cmd/dep
 
