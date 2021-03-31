@@ -173,7 +173,7 @@ func resourceGroupSettings() *schema.Resource {
 			"who_can_contact_owner": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"ANYONE_CAN_CONTACT", "ALL_IN_DOMAIN_CAN_CONTACT", "ALL_MEMBERS_CAN_CONTACT", "ALL_MANAGERS_CAN_CONTACT", ""}, false),
+				ValidateFunc: validation.StringInSlice([]string{"ANYONE_CAN_CONTACT", "ALL_IN_DOMAIN_CAN_CONTACT", "ALL_MEMBERS_CAN_CONTACT", "ALL_MANAGERS_CAN_CONTACT", "ALL_OWNERS_CAN_CONTACT", ""}, false),
 				Default:      "ANYONE_CAN_CONTACT",
 			},
 			"who_can_delete_any_post": {

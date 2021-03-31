@@ -99,7 +99,7 @@ The following arguments are supported:
   The valid values are `NONE`, `OWNERS_ONLY`, `MANAGERS_ONLY`, `OWNERS_AND_MANAGERS` and `ALL_MEMBERS`. Defaults to `NONE`.
 
 * `who_can_contact_owner` - (Optional) Permission to contact owner of the group via web UI.
-  The valid values are `ANYONE_CAN_CONTACT`, `ALL_IN_DOMAIN_CAN_CONTACT`, `ALL_MEMBERS_CAN_CONTACT` and `ALL_MANAGERS_CAN_CONTACT`. Defaults to `ANYONE_CAN_CONTACT`.
+  The valid values are `ANYONE_CAN_CONTACT`, `ALL_IN_DOMAIN_CAN_CONTACT`, `ALL_MEMBERS_CAN_CONTACT`, `ALL_MANAGERS_CAN_CONTACT` and `ALL_OWNERS_CAN_CONTACT`. Defaults to `ANYONE_CAN_CONTACT`.
 
 * `who_can_discover_group` - (Optional) Specifies the set of users for whom this group
   is discoverable.
