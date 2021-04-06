@@ -16,7 +16,7 @@ GOTAGS ?=
 GOMAXPROCS ?= 8
 
 # Get the project metadata
-GOVERSION := 1.15
+GOVERSION := 1.16
 PKG_NAME := gsuite
 PROJECT := github.com/DeviaVir/terraform-provider-$(PKG_NAME)
 OWNER := $(notdir $(patsubst %/,%,$(dir $(PROJECT))))
@@ -31,8 +31,8 @@ GOARCH ?= $(shell go env GOARCH)
 
 # Default os-arch combination to build
 XC_OS ?= linux darwin freebsd openbsd solaris windows
-XC_ARCH ?= amd64 386 arm
-XC_EXCLUDE ?= darwin/386 darwin/arm solaris/386 solaris/arm windows/arm
+XC_ARCH ?= amd64 386 arm arm64
+XC_EXCLUDE ?= darwin/386 darwin/arm solaris/386 solaris/arm windows/arm solaris/arm64 windows/arm64 freebsd/arm64 openbsd/arm64
 
 # GPG Signing key (blank by default, means no GPG signing)
 GPG_KEY ?=
