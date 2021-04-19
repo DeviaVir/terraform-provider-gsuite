@@ -166,7 +166,7 @@ func resourceUserAttributesDelete(d *schema.ResourceData, meta interface{}) erro
 
 	var err error
 	err = retry(func() error {
-		_, err = config.directory.Users.Patch(d.Id(), user).Do()
+		_, err = config.directory.Users.Update(d.Id(), user).Do()
 		return err
 	}, config.TimeoutMinutes)
 	if err != nil {
