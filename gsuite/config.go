@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"cloud.google.com/go/compute/metadata"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/pathorcontents"
 	"github.com/pkg/errors"
@@ -16,6 +17,7 @@ import (
 	"golang.org/x/oauth2/jwt"
 	directory "google.golang.org/api/admin/directory/v1"
 	groupSettings "google.golang.org/api/groupssettings/v1"
+	"google.golang.org/api/impersonate"
 	"google.golang.org/api/option"
 )
 
@@ -55,6 +57,8 @@ func (c *Config) loadAndValidate(terraformVersion string) error {
 	oauthScopes := c.OauthScopes
 
 	var client *http.Client
+	clientOptions := []option.ClientOption{}
+
 	if c.Credentials != "" {
 		if c.ImpersonatedUserEmail == "" {
 			return fmt.Errorf("required field missing: impersonated_user_email")
@@ -89,6 +93,24 @@ func (c *Config) loadAndValidate(terraformVersion string) error {
 		// authorized and authenticated on the behalf of
 		// your service account.
 		client = conf.Client(context.Background())
+	} else if c.ImpersonatedUserEmail != "" {
+		// try reaching the metadata endpoint
+		serviceAccount, err := metadata.Get("/instance/service-accounts/default/email")
+		if err != nil {
+			return errors.Wrap(err, "failed to get service account from metadata server")
+		}
+		log.Printf("[INFO] Authenticating using credentials from metadata server")
+
+		tokenSource, err := impersonate.CredentialsTokenSource(context.Background(), impersonate.CredentialsConfig{
+			TargetPrincipal: serviceAccount,
+			Scopes:          oauthScopes,
+			Subject:         c.ImpersonatedUserEmail,
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to create impersonated token source")
+		}
+		clientOptions = append(clientOptions, option.WithTokenSource(tokenSource))
+
 	} else {
 		log.Printf("[INFO] Authenticating using DefaultClient")
 		err := error(nil)
@@ -105,9 +127,9 @@ func (c *Config) loadAndValidate(terraformVersion string) error {
 		runtime.GOOS, runtime.GOARCH, terraformVersion)
 
 	context := context.Background()
-
+	clientOptions = append(clientOptions, option.WithHTTPClient(client))
 	// Create the directory service.
-	directorySvc, err := directory.NewService(context, option.WithHTTPClient(client))
+	directorySvc, err := directory.NewService(context, clientOptions...)
 	if err != nil {
 		return err
 	}
@@ -115,7 +137,7 @@ func (c *Config) loadAndValidate(terraformVersion string) error {
 	c.directory = directorySvc
 
 	// Create the groupSettings service.
-	groupSettingsSvc, err := groupSettings.NewService(context, option.WithHTTPClient(client))
+	groupSettingsSvc, err := groupSettings.NewService(context, clientOptions...)
 	if err != nil {
 		return err
 	}
