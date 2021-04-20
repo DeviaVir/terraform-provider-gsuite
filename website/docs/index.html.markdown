@@ -49,11 +49,15 @@ The provider configuration block accepts the following arguments.
 In most cases it is recommended to set them via the indicated environment
 variables in order to keep credential information out of the configuration.
 
-* `credentials` - (Optional) Path to or string content of your credentials. If
-  you have authenticated using `gcloud auth login` and want to test using your
-  personal account you may leave this empty. May be set via the
+* `credentials` - (Optional) Path to or string content of your credentials. This may 
+   also be set via the
   `GOOGLE_CREDENTIALS`, `GOOGLE_CLOUD_KEYFILE_JSON`, `GOOGLE_KEYFILE_JSON`,
-  `GOOGLE_APPLICATION_CREDENTIALS` environment variables.
+  `GOOGLE_APPLICATION_CREDENTIALS` environment variables. If
+  you have authenticated using `gcloud auth login` and want to test using your
+  personal account you may leave this empty. If you are using this provider in a GCP
+  environment, you may leave this empty and the provider will fetch credentials from
+  the [GCP internal metadata server](https://cloud.google.com/compute/docs/storing-retrieving-metadata).
+
 
 * `impersonated_user_email` - (Optional) Service accounts cannot be granted
   access to the Admin API SDK, therefore the service account needs to

@@ -122,12 +122,16 @@ func (c *Config) loadAndValidate(terraformVersion string) error {
 
 	// Use a custom user-agent string. This helps google with analytics and it's
 	// just a nice thing to do.
-	client.Transport = logging.NewTransport("Google", client.Transport)
+	if client != nil {
+		client.Transport = logging.NewTransport("Google", client.Transport)
+		clientOptions = append(clientOptions, option.WithHTTPClient(client))
+
+	}
+
 	userAgent := fmt.Sprintf("(%s %s) Terraform/%s",
 		runtime.GOOS, runtime.GOARCH, terraformVersion)
-
 	context := context.Background()
-	clientOptions = append(clientOptions, option.WithHTTPClient(client))
+
 	// Create the directory service.
 	directorySvc, err := directory.NewService(context, clientOptions...)
 	if err != nil {
