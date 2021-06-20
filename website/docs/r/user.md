@@ -1,14 +1,14 @@
 ---
 layout: "gsuite"
 page_title: "G Suite: gsuite_user"
-sidebar_current: "docs-gsuite-resource-user-schema"
+sidebar_current: "docs-gsuite-resource-user"
 description: |-
-  Managing a G Suite User Schema.
+  Managing a G Suite User.
 ---
 
 # gsuite\_user
 
-Provides a resource to create and manage a G Suite User Schema.
+Provides a resource to create and manage a G Suite User.
 
 **Note** the following behaviors regarding passwords:
 
@@ -88,7 +88,7 @@ The following arguments are supported:
   email addresses.
 
 * `include_in_global_list` - (Optional) Boolean switch to show or hide this user
-  in the global list. 
+  in the global list.
   Valid values are `true` or `false`. Defaults to `true`.
 
 * `is_ip_whitelisted` - (Optional) Boolean switch to enforce whitelisting of the
