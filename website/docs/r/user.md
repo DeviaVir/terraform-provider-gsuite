@@ -1,12 +1,12 @@
 ---
 layout: "gsuite"
-page_title: "G Suite: gsuite_user_schema"
+page_title: "G Suite: gsuite_user"
 sidebar_current: "docs-gsuite-resource-user-schema"
 description: |-
   Managing a G Suite User Schema.
 ---
 
-# gsuite\_user\_schema
+# gsuite\_user
 
 Provides a resource to create and manage a G Suite User Schema.
 
