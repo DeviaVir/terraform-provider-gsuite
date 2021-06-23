@@ -61,6 +61,7 @@ func Provider() *schema.Provider {
 			"gsuite_group_members":   resourceGroupMembers(),
 			"gsuite_group_settings":  resourceGroupSettings(),
 			"gsuite_user":            resourceUser(),
+			"gsuite_user_alias":      resourceUserAlias(),
 			"gsuite_user_attributes": resourceUserAttributes(),
 			"gsuite_user_schema":     resourceUserSchema(),
 		},
