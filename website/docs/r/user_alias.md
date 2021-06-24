@@ -6,7 +6,7 @@ description: |-
   Managing a G Suite User Alias.
 ---
 
-# gsuite\_user\_alias
+# gsuite_user_alias
 
 Provides a resource for creating and managing an email alias for a GSuite user account.
 
@@ -31,7 +31,7 @@ N/A apart from the included arguments
 
 ## Import 
 
-An alias can be imported by passing the ID format of "<user_id>/<alias>"
+An alias can be imported by passing the ID format of "{user_id}/{alias}"
 
 For example:
 ```
