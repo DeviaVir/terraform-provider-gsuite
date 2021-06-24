@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -13,11 +14,13 @@ import (
 
 func resourceUserAlias() *schema.Resource {
 	return &schema.Resource{
-		Create:   resourceUserAliasCreate,
-		Read:     resourceUserAliasRead,
-		Update:   nil,
-		Delete:   resourceUserAliasDelete,
-		Importer: nil,
+		Create: resourceUserAliasCreate,
+		Read:   resourceUserAliasRead,
+		Update: nil,
+		Delete: resourceUserAliasDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceUserAliasImport,
+		},
 		Schema: map[string]*schema.Schema{
 			"user_id": {
 				Type:        schema.TypeString,
@@ -68,7 +71,7 @@ func resourceUserAliasCreate(d *schema.ResourceData, meta interface{}) error {
 
 	}, bOff)
 
-	d.SetId(resp.Alias)
+	d.SetId(fmt.Sprintf("%s/%s", resp.PrimaryEmail, resp.Alias))
 	return resourceUserAliasRead(d, meta)
 }
 
@@ -89,7 +92,7 @@ func resourceUserAliasRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 		return nil
 	}
-	d.SetId(alias)
+	d.SetId(fmt.Sprintf("%s/%s", userId, alias))
 	d.Set("user_id", userId)
 	d.Set("alias", alias)
 	return nil
@@ -108,6 +111,28 @@ func resourceUserAliasDelete(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId("")
 	return nil
+}
+
+func resourceUserAliasImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(*Config)
+
+	userId := strings.Split(d.Id(), "/")[0]
+	expectedAlias := strings.Split(d.Id(), "/")[1]
+
+	resp, err := config.directory.Users.Aliases.List(userId).Do()
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve aliases for user (%s): %v", userId, err)
+	}
+
+	alias, ok := doesAliasExist(resp, expectedAlias)
+	if !ok {
+		return nil, fmt.Errorf("no matching alias (%s) found for user (%s).", expectedAlias, userId)
+	}
+	d.SetId(fmt.Sprintf("%s/%s", userId, alias))
+	d.Set("user_id", userId)
+	d.Set("alias", alias)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 func doesAliasExist(aliasesResp *admin.Aliases, expectedAlias string) (string, bool) {
