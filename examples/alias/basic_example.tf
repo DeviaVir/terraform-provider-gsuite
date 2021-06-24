@@ -12,6 +12,6 @@ resource "gsuite_user" "test" {
 }
 
 resource "gsuite_user_alias" "test" {
-  user_id = gsuite_user.test.id
+  user_id = gsuite_user.test.primary_email
   alias   = "test-alias-replaceWithUuid@domain.ext"
 }
