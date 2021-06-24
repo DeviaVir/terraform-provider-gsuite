@@ -10,10 +10,10 @@ import (
 
 func resourceUserAlias() *schema.Resource {
 	return &schema.Resource{
-		Create:   nil,
-		Read:     nil,
+		Create:   resourceUserAliasCreate,
+		Read:     resourceUserAliasRead,
 		Update:   nil,
-		Delete:   nil,
+		Delete:   resourceUserAliasDelete,
 		Importer: nil,
 		Schema: map[string]*schema.Schema{
 			"user_id": {
