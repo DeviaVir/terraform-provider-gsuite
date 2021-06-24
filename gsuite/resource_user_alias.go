@@ -3,6 +3,7 @@ package gsuite
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -50,7 +51,7 @@ func resourceUserAliasCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	bOff := backoff.NewExponentialBackOff()
-	bOff.MaxElapsedTime = time.Second * 60
+	bOff.MaxElapsedTime = time.Minute * 3
 	bOff.InitialInterval = time.Second
 
 	err = backoff.Retry(func() error {
@@ -59,7 +60,7 @@ func resourceUserAliasCreate(d *schema.ResourceData, meta interface{}) error {
 			return backoff.Permanent(fmt.Errorf("could not retrieve aliases for user (%s): %v", userId, err))
 		}
 
-		ok, _ := doesAliasExist(resp, setAlias)
+		_, ok := doesAliasExist(resp, setAlias)
 		if ok {
 			return nil
 		}
@@ -82,15 +83,15 @@ func resourceUserAliasRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("could not retrieve aliases for user (%s): %v", userId, err)
 	}
 
-	ok, alias := doesAliasExist(resp, expectedAlias)
+	alias, ok := doesAliasExist(resp, expectedAlias)
 	if !ok {
 		log.Println(fmt.Sprintf("[WARN] no matching alias (%s) found for user (%s).", expectedAlias, userId))
 		d.SetId("")
 		return nil
 	}
-	d.SetId(alias.Alias)
-	d.Set("user_id", alias.PrimaryEmail)
-	d.Set("alias", alias.Alias)
+	d.SetId(alias)
+	d.Set("user_id", userId)
+	d.Set("alias", alias)
 	return nil
 }
 
@@ -109,15 +110,19 @@ func resourceUserAliasDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func doesAliasExist(aliasesResp *admin.Aliases, expectedAlias string) (bool, admin.Alias) {
-	for _, alias := range aliasesResp.Aliases {
-		alias, ok := alias.(admin.Alias)
+func doesAliasExist(aliasesResp *admin.Aliases, expectedAlias string) (string, bool) {
+	for _, aliasInt := range aliasesResp.Aliases {
+		alias, ok := aliasInt.(map[string]interface{})
 		if ok {
-			if expectedAlias == alias.Alias {
-				return true, alias
+			value := alias["alias"].(string)
+			if expectedAlias == alias["alias"].(string) {
+				return value, true
 			}
 		}
-		log.Println(fmt.Sprintf("[ERROR] alias format in response did not match sdk struct, this indicates a probelm with provider or sdk handling: %v", alias))
+		if !ok {
+			log.Println(fmt.Sprintf("[ERROR] alias format in response did not match sdk struct, this indicates a probelm with provider or sdk handling: %v", reflect.TypeOf(aliasInt)))
+			return "", false
+		}
 	}
-	return false, admin.Alias{}
+	return "", false
 }
