@@ -44,14 +44,13 @@ func resourceUserAliasCreate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to add alias for user (%s): %v", userId, err)
 	}
-	d.SetId(resp.Id)
+	d.SetId(resp.Alias)
 	return resourceUserAliasRead(d, meta)
 }
 
 func resourceUserAliasRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	aliasId := d.Get("id").(string)
 	userId := d.Get("user_id").(string)
 	expectedAlias := d.Get("alias").(string)
 
@@ -63,12 +62,7 @@ func resourceUserAliasRead(d *schema.ResourceData, meta interface{}) error {
 	for _, alias := range resp.Aliases {
 		alias, ok := alias.(admin.Alias)
 		if ok {
-			if aliasId == alias.Id && expectedAlias == alias.Alias {
-				d.SetId(alias.Id)
-				return nil
-			}
 			if expectedAlias == alias.Alias {
-				log.Println(fmt.Sprintf("[WARN] ID (%s) for alias (%s) did not match configuration (%s), could indicate issue with setting the alias in terraform.", alias.Id, alias.Alias, aliasId))
 				d.SetId(alias.Id)
 				return nil
 			}
