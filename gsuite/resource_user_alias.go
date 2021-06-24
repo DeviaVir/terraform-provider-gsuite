@@ -50,7 +50,7 @@ func resourceUserAliasCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	resp, err := config.directory.Users.Aliases.Insert(userId, alias).Do()
 	if err != nil {
-		return fmt.Errorf("failed to add alias for user (%s): %v", userId, err)
+		return fmt.Errorf("[ERROR] failed to add alias for user (%s): %v", userId, err)
 	}
 
 	bOff := backoff.NewExponentialBackOff()
@@ -60,7 +60,7 @@ func resourceUserAliasCreate(d *schema.ResourceData, meta interface{}) error {
 	err = backoff.Retry(func() error {
 		resp, err := config.directory.Users.Aliases.List(userId).Do()
 		if err != nil {
-			return backoff.Permanent(fmt.Errorf("could not retrieve aliases for user (%s): %v", userId, err))
+			return backoff.Permanent(fmt.Errorf("[ERROR] could not retrieve aliases for user (%s): %v", userId, err))
 		}
 
 		_, ok := doesAliasExist(resp, setAlias)
@@ -83,7 +83,7 @@ func resourceUserAliasRead(d *schema.ResourceData, meta interface{}) error {
 
 	resp, err := config.directory.Users.Aliases.List(userId).Do()
 	if err != nil {
-		return fmt.Errorf("could not retrieve aliases for user (%s): %v", userId, err)
+		return fmt.Errorf("[ERROR] could not retrieve aliases for user (%s): %v", userId, err)
 	}
 
 	alias, ok := doesAliasExist(resp, expectedAlias)
@@ -106,7 +106,7 @@ func resourceUserAliasDelete(d *schema.ResourceData, meta interface{}) error {
 
 	err := config.directory.Users.Aliases.Delete(userId, alias).Do()
 	if err != nil {
-		return fmt.Errorf("unable to remove alias (%s) from user (%s): %v", alias, userId, err)
+		return fmt.Errorf("[ERROR] unable to remove alias (%s) from user (%s): %v", alias, userId, err)
 	}
 
 	d.SetId("")
@@ -121,12 +121,12 @@ func resourceUserAliasImport(d *schema.ResourceData, meta interface{}) ([]*schem
 
 	resp, err := config.directory.Users.Aliases.List(userId).Do()
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve aliases for user (%s): %v", userId, err)
+		return nil, fmt.Errorf("[ERROR] could not retrieve aliases for user (%s): %v", userId, err)
 	}
 
 	alias, ok := doesAliasExist(resp, expectedAlias)
 	if !ok {
-		return nil, fmt.Errorf("no matching alias (%s) found for user (%s).", expectedAlias, userId)
+		return nil, fmt.Errorf("[ERROR] no matching alias (%s) found for user (%s).", expectedAlias, userId)
 	}
 	d.SetId(fmt.Sprintf("%s/%s", userId, alias))
 	d.Set("user_id", userId)
