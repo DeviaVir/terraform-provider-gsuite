@@ -51,7 +51,7 @@ func resourceUserAliasCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	bOff := backoff.NewExponentialBackOff()
-	bOff.MaxElapsedTime = time.Minute * 3
+	bOff.MaxElapsedTime = time.Duration(config.TimeoutMinutes) * time.Minute
 	bOff.InitialInterval = time.Second
 
 	err = backoff.Retry(func() error {
