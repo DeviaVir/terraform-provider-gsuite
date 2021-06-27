@@ -1,3 +1,13 @@
+# Deprecation notice
+
+A big thank you to all 30 contributors that have helped make `terraform-provider-gsuite` a success for many across its ~3 year life span (first public release `Feb 9, 2018`)!
+
+Hashicorp has released [terraform-provider-googleworkspace](https://github.com/hashicorp/terraform-provider-googleworkspace) with its first release up to feature-parity with the gsuite provider. As such, we will no longer be maintaining the `gsuite` provider and kindly refer users and contributors to the Hashicorp Google Workspace provider.
+
+So long, and thanks for all the fish!
+
+---
+
 Terraform Provider - G Suite
 ==================
 
