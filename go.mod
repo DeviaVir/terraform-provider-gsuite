@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	cloud.google.com/go v0.79.0
+	github.com/cenkalti/backoff/v4 v4.1.1
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/terraform-plugin-sdk v1.13.0
 	github.com/pkg/errors v0.9.1
