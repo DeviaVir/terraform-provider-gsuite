@@ -273,6 +273,7 @@ func resourceUser() *schema.Resource {
 								// "ESSENTIALS", API error
 								"LITE",
 								"MESSAGE_SECURITY",
+								"NONPROFIT",
 								"",
 							}, false),
 						},
@@ -751,6 +752,7 @@ func userLicensesUpdate(config *Config, d *schema.ResourceData, user *directory.
 				// "essentials": "1010060001", // API error
 				"lite": "Google-Apps-Lite",
 				"message_security": "Google-Apps-For-Postini",
+				"nonprofit": "Google-Apps-For-Nonprofits",
 			},
 		},
 		"gsuite_enterprise_education": map[string]map[string]string{
